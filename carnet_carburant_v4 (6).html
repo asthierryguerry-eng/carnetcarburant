@@ -1,0 +1,2442 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carnet Carburant — TICPE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f4f8; --surface: #ffffff; --surface-alt: #f1f5f9; --surface-glass: rgba(255,255,255,0.7);
+      --border: #e2e8f0; --border-light: #f1f5f9; --border-focus: #3b82f6;
+      --text: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8;
+      --primary: #3b82f6; --primary-dark: #2563eb; --primary-light: #eff6ff; --primary-glow: rgba(59,130,246,0.15);
+      --accent-green: #10b981; --accent-green-dark: #059669; --accent-green-light: #ecfdf5;
+      --accent-amber: #f59e0b; --accent-amber-dark: #d97706; --accent-amber-light: #fffbeb;
+      --accent-red: #ef4444; --accent-red-light: #fef2f2;
+      --accent-purple: #8b5cf6; --accent-purple-light: #f5f3ff;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(15,23,42,0.08); --shadow-lg: 0 12px 40px rgba(15,23,42,0.12);
+      --radius-sm: 6px; --radius: 12px; --radius-lg: 16px; --radius-xl: 20px;
+      --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    [data-theme="dark"] {
+      --bg: #0f172a; --surface: #1e293b; --surface-alt: #1e293b; --surface-glass: rgba(30,41,59,0.8);
+      --border: #334155; --border-light: #1e293b; --border-focus: #3b82f6;
+      --text: #f1f5f9; --text-secondary: #cbd5e1; --text-muted: #64748b;
+      --primary: #60a5fa; --primary-dark: #3b82f6; --primary-light: rgba(59,130,246,0.15); --primary-glow: rgba(59,130,246,0.2);
+      --accent-green: #34d399; --accent-green-dark: #10b981; --accent-green-light: rgba(16,185,129,0.15);
+      --accent-amber: #fbbf24; --accent-amber-dark: #f59e0b; --accent-amber-light: rgba(245,158,11,0.15);
+      --accent-red: #f87171; --accent-red-light: rgba(239,68,68,0.15);
+      --accent-purple: #a78bfa; --accent-purple-light: rgba(139,92,246,0.15);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.2); --shadow-md: 0 4px 16px rgba(0,0,0,0.3); --shadow-lg: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; transition: background var(--transition), color var(--transition); }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .app { display: flex; min-height: 100vh; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar { width: 280px; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    [data-theme="dark"] .sidebar { background: linear-gradient(180deg, #0f172a, #020617); }
+    .sidebar-header { padding: 28px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-icon { width: 44px; height: 44px; background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .sidebar-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .sidebar-subtitle { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .sidebar-nav { padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; color: rgba(255,255,255,0.6); font-size: 14px; cursor: pointer; transition: all var(--transition); font-weight: 500; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9); }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+    .sidebar-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 24px; }
+    .sidebar-stats { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .sidebar-stat { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-stat-label { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; }
+    .sidebar-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-top: 4px; }
+    .sidebar-stat-value.blue { color: #60a5fa; }
+    .sidebar-stat-value.green { color: #34d399; }
+    .sidebar-stat-value.amber { color: #fbbf24; }
+    .sidebar-footer { margin-top: auto; padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; }
+    .theme-toggle { width: 48px; height: 26px; border-radius: 13px; background: rgba(255,255,255,0.1); border: none; cursor: pointer; position: relative; transition: background var(--transition); }
+    .theme-toggle::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: transform var(--transition); }
+    [data-theme="dark"] .theme-toggle { background: #3b82f6; }
+    [data-theme="dark"] .theme-toggle::after { transform: translateX(22px); }
+    .theme-label { font-size: 12px; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 6px; }
+
+    /* ===== MAIN ===== */
+    .main { flex: 1; padding: 32px 40px 48px; max-width: 1400px; margin: 0 auto; overflow-x: hidden; }
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, var(--primary), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-header p { color: var(--text-muted); font-size: 14.5px; margin-top: 4px; }
+
+    /* ===== TOP BAR ===== */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 28px; }
+    .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .search-wrap { position: relative; }
+    .search-wrap input { padding: 9px 14px 9px 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; width: 200px; background: var(--surface); color: var(--text); transition: all var(--transition); }
+    .search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); width: 260px; }
+    .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none; }
+    select, input[type="date"] { padding: 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--surface); color: var(--text); transition: border-color var(--transition); }
+    select:focus, input[type="date"]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .segmented { display: flex; background: var(--surface-alt); border-radius: 8px; padding: 3px; border: 1px solid var(--border); }
+    .seg-btn { padding: 7px 16px; border: none; background: transparent; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 500; transition: all var(--transition); }
+    .seg-btn.active { background: var(--surface); color: var(--primary); font-weight: 600; box-shadow: var(--shadow-sm); }
+
+    /* ===== BUTTONS ===== */
+    .btn { padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all var(--transition); position: relative; overflow: hidden; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; box-shadow: 0 2px 8px var(--primary-glow); }
+    .btn-primary:hover { box-shadow: 0 4px 16px var(--primary-glow); transform: translateY(-1px); }
+    .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-ghost { background: transparent; color: var(--primary); padding: 6px 8px; font-size: 13px; border-radius: 6px; }
+    .btn-ghost.danger { color: var(--accent-red); }
+    .btn-ghost:hover { background: var(--primary-light); }
+    .btn-ghost.danger:hover { background: var(--accent-red-light); }
+    .btn-sm { padding: 6px 12px; font-size: 12.5px; border-radius: 8px; }
+    .btn-danger { background: linear-gradient(135deg, var(--accent-red), #dc2626); color: #fff; }
+    .btn-warning { background: linear-gradient(135deg, var(--accent-amber), var(--accent-amber-dark)); color: #fff; }
+
+    /* ===== PANELS ===== */
+    .panel { background: var(--surface-glass); backdrop-filter: blur(16px); border-radius: var(--radius-lg); padding: 28px; margin-bottom: 32px; box-shadow: var(--shadow-md); border: 1px solid var(--border); display: none; }
+    .panel.open { display: block; animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+    @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .panel h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .form-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .form-grid .span2 { grid-column: span 2; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+    .field input, .field select { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--surface); color: var(--text); transition: border-color var(--transition); }
+    .field input:focus, .field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .form-footer { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; }
+
+    /* ===== STAT CARDS ===== */
+    .cards-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--surface-glass); backdrop-filter: blur(16px); border-radius: var(--radius-lg); padding: 22px; box-shadow: var(--shadow-md); border: 1px solid var(--border); transition: all var(--transition); position: relative; overflow: hidden; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .stat-icon { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+    .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 800; margin-top: 8px; letter-spacing: -0.5px; }
+    .stat-value.blue { color: var(--primary); }
+    .stat-value.green { color: var(--accent-green); }
+    .stat-value.amber { color: var(--accent-amber); }
+    .stat-value.purple { color: var(--accent-purple); }
+    .stat-value.red { color: var(--accent-red); }
+    .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .stat-bg { position: absolute; right: -8px; bottom: -8px; font-size: 64px; opacity: 0.06; pointer-events: none; }
+
+    /* ===== CHART ===== */
+    .chart-card { background: var(--surface-glass); backdrop-filter: blur(16px); border-radius: var(--radius-lg); padding: 28px; margin-bottom: 32px; box-shadow: var(--shadow-md); border: 1px solid var(--border); }
+    .chart-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .chart-container { display: flex; gap: 32px; }
+    .chart-section { flex: 1; }
+    .chart-section h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600; }
+    .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; }
+    .bar-label { font-size: 12px; color: var(--text-muted); width: 48px; text-align: right; font-weight: 500; }
+    .bar-track { flex: 1; height: 28px; background: var(--surface-alt); border-radius: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-weight: 600; color: #fff; min-width: 24px; transition: width 0.5s cubic-bezier(0.16,1,0.3,1); }
+    .bar-fill.blue { background: linear-gradient(90deg, var(--primary), var(--primary-dark)); }
+    .bar-fill.green { background: linear-gradient(90deg, var(--accent-green), var(--accent-green-dark)); }
+    .bar-empty { text-align: center; padding: 20px; color: var(--text-muted); font-size: 14px; }
+
+    /* ===== TABLE ===== */
+    .table-card { background: var(--surface-glass); backdrop-filter: blur(16px); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--border); margin-bottom: 32px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { padding: 12px 14px; text-align: left; font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    thead th.sorted { color: var(--primary); }
+    thead th.num { text-align: right; }
+    tbody td { padding: 12px 14px; font-size: 14px; border-bottom: 1px solid var(--border-light); }
+    tbody td.num { font-family: 'Space Grotesk', sans-serif; font-weight: 600; text-align: right; }
+    tbody tr:hover { background: var(--primary-light); }
+    tbody tr.selected { background: rgba(59,130,246,0.08); }
+    .cb-cell { width: 36px; text-align: center; }
+    .empty { text-align: center; padding: 48px 20px; }
+    .empty-icon { font-size: 40px; margin-bottom: 8px; opacity: 0.5; }
+    .empty-text { font-size: 16px; font-weight: 600; color: var(--text-muted); }
+    .empty-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ===== TAGS ===== */
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .tag-gazole { background: #dbeafe; color: #1d4ed8; }
+    .tag-gnr { background: #dcfce7; color: #166534; }
+    .tag-essence { background: #fef9c3; color: #854d0e; }
+    .tag-other { background: var(--surface-alt); color: var(--text-secondary); }
+    [data-theme="dark"] .tag-gazole { background: rgba(59,130,246,0.15); color: #93c5fd; }
+    [data-theme="dark"] .tag-gnr { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+    [data-theme="dark"] .tag-essence { background: rgba(245,158,11,0.15); color: #fcd34d; }
+    [data-theme="dark"] .tag-other { background: rgba(100,116,139,0.15); color: #cbd5e1; }
+    .tag-adblue { background: #e0e7ff; color: #3730a3; border: 1px solid rgba(99,102,241,0.3); }
+    [data-theme="dark"] .tag-adblue { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); }
+
+    /* ===== ADBLUE TOGGLE =====*/
+    .toggle-wrap { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-secondary); }
+    .toggle-switch { position:relative; width:40px; height:22px; }
+    .toggle-switch input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; cursor:pointer; inset:0; background:var(--surface-alt); border-radius:22px; transition:0.2s; border:1px solid var(--border); }
+    .toggle-slider::before { content:''; position:absolute; height:16px; width:16px; left:2px; bottom:2px; background:white; border-radius:50%; transition:0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.15); }
+    .toggle-switch input:checked + .toggle-slider { background:var(--accent-green); border-color:var(--accent-green); }
+    .toggle-switch input:checked + .toggle-slider::before { transform:translateX(18px); }
+    [data-theme="dark"] .toggle-slider::before { background:#e2e8f0; }
+    /* ===== COMPTABLE REPORT =====*/
+    .comptable-card { background:var(--card); border-radius:16px; border:1px solid var(--border); padding:32px; margin:16px 0; }
+    .comptable-card h3 { font-size:20px; margin-bottom:8px; }
+    .comptable-header { border-bottom:2px solid var(--border); padding-bottom:16px; margin-bottom:20px; }
+    .comptable-header .info-row { display:flex; justify-content:space-between; padding:4px 0; font-size:14px; }
+    .comptable-section { margin-bottom:24px; }
+    .comptable-section h4 { font-size:15px; font-weight:700; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+    .comptable-section h4.reimbursable { color:var(--accent-green); }
+    .comptable-section h4.non-reimbursable { color:#ef4444; }
+    .comptable-table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:12px; }
+    .comptable-table th { text-align:left; padding:6px 10px; background:var(--surface-alt); font-weight:600; border-bottom:2px solid var(--border); }
+    .comptable-table td { padding:5px 10px; border-bottom:1px solid var(--border); }
+    .comptable-table .num { text-align:right; font-variant-numeric:tabular-nums; }
+    .comptable-table .total-row td { font-weight:700; border-top:2px solid var(--border); background:var(--surface-alt); }
+    .comptable-totals { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:16px; }
+    .comptable-total-box { padding:14px 18px; border-radius:10px; border:1px solid var(--border); }
+    .comptable-total-box.green { background:var(--accent-green-light); border-color:rgba(16,185,129,0.2); }
+    .comptable-total-box .label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+    .comptable-total-box .value { font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; margin-top:4px; }
+    .comptable-total-box.green .value { color:var(--accent-green); }
+    .comptable-total-box .sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+    /* ===== ACTIONS BAR ===== */
+    .actions-bar { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+    .bulk-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); padding: 12px 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); display: none; align-items: center; gap: 14px; z-index: 50; }
+    .bulk-bar.visible { display: flex; animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+    .bulk-bar .count { font-weight: 700; color: var(--primary); font-family: 'Space Grotesk', sans-serif; }
+
+    /* ===== PDF DROPZONE ===== */
+    .pdf-dropzone { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 40px; text-align: center; cursor: pointer; transition: all var(--transition); background: var(--surface-alt); }
+    .pdf-dropzone:hover, .pdf-dropzone.dragover { border-color: var(--primary); background: var(--primary-light); }
+    .drop-icon { font-size: 40px; margin-bottom: 8px; }
+    .drop-text { font-size: 14px; color: var(--text-secondary); }
+    .hidden-input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+
+    /* ===== TICKET PREVIEW ===== */
+    .ticket-preview { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+    .ticket-preview.duplicate { border-color: var(--accent-amber); background: var(--accent-amber-light); }
+    .ticket-preview.incomplete { border-color: var(--accent-red); background: var(--accent-red-light); }
+    .ticket-preview h4 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 14px; font-weight: 700; }
+    .ticket-preview .fields { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+    .ticket-preview .field label { font-size: 11px; }
+    .ticket-preview .field input, .ticket-preview .field select { padding: 7px 10px; font-size: 13px; }
+
+    /* ===== IMAGE DROPZONE ===== */
+    .img-dropzone { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 32px; text-align: center; cursor: pointer; transition: all var(--transition); background: var(--surface-alt); margin-top: 16px; }
+    .img-dropzone:hover, .img-dropzone.dragover { border-color: var(--accent-purple); background: var(--accent-purple-light); }
+
+    /* ===== OCR PROGRESS ===== */
+    .ocr-progress { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 12px; }
+    .ocr-progress-bar { height: 8px; background: var(--surface-alt); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+    .ocr-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-purple), var(--primary)); border-radius: 4px; transition: width 0.3s ease; }
+    .ocr-progress-text { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+
+    /* ===== IMPORT TABS ===== */
+    .import-tabs { display: flex; gap: 2px; background: var(--surface-alt); border-radius: 10px; padding: 4px; border: 1px solid var(--border); margin-bottom: 20px; }
+    .import-tab { flex: 1; padding: 10px 16px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-muted); transition: all var(--transition); display: flex; align-items: center; gap: 8px; justify-content: center; }
+    .import-tab.active { background: var(--surface); color: var(--primary); font-weight: 600; box-shadow: var(--shadow-sm); }
+    .import-tab:hover:not(.active) { color: var(--text-secondary); background: rgba(255,255,255,0.05); }
+    .import-content { display: none; }
+    .import-content.active { display: block; }
+
+    /* ===== STATUS BOX ===== */
+    .status-box { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; margin-top: 16px; }
+    .status-box.info { background: var(--primary-light); color: var(--primary); border: 1px solid rgba(59,130,246,0.2); }
+    .status-box.success { background: var(--accent-green-light); color: var(--accent-green-dark); border: 1px solid rgba(16,185,129,0.2); }
+    .status-box.warning { background: var(--accent-amber-light); color: var(--accent-amber-dark); border: 1px solid rgba(245,158,11,0.2); }
+    .status-box.error { background: var(--accent-red-light); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.2); }
+
+    /* ===== DUPLICATE PANEL ===== */
+    .dedup-card { background: var(--surface-glass); backdrop-filter: blur(16px); border-radius: var(--radius-lg); padding: 28px; margin-bottom: 32px; box-shadow: var(--shadow-md); border: 1px solid var(--border); display: none; }
+    .dedup-card.open { display: block; animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+    .dedup-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .dedup-group { background: var(--surface); border: 2px solid var(--accent-amber); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+    .dedup-group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dedup-group-header .badge { background: var(--accent-amber); color: #fff; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+    .dedup-entry { display: grid; grid-template-columns: repeat(6,1fr) auto; gap: 8px; padding: 10px 12px; border-radius: 8px; align-items: center; font-size: 13px; }
+    .dedup-entry:first-of-type { background: var(--accent-green-light); border: 1px solid rgba(16,185,129,0.2); }
+    .dedup-entry:not(:first-of-type) { background: var(--accent-red-light); border: 1px solid rgba(239,68,68,0.15); }
+    .dedup-entry .keep-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 700; }
+    .dedup-entry .keep-tag.keep { background: var(--accent-green-light); color: var(--accent-green-dark); }
+    .dedup-entry .keep-tag.remove { background: var(--accent-red-light); color: var(--accent-red); }
+
+    /* ===== FISCAL SUMMARY ===== */
+    .fiscal-card { background: var(--surface-glass); backdrop-filter: blur(16px); border-radius: var(--radius-lg); padding: 28px; margin-bottom: 32px; box-shadow: var(--shadow-md); border: 1px solid var(--border); display: none; }
+    .fiscal-card.open { display: block; animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+    .fiscal-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .fiscal-table { width: 100%; border-collapse: collapse; }
+    .fiscal-table th { padding: 10px 14px; text-align: left; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .fiscal-table td { padding: 10px 14px; font-size: 14px; border-bottom: 1px solid var(--border-light); }
+    .fiscal-table td.num { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+    .fiscal-total { background: var(--primary-light); font-weight: 700; }
+
+    /* ===== RATE PANEL ===== */
+    .rate-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+    /* ===== MODAL ===== */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-overlay.open { display: flex; animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box { background: var(--surface); padding: 28px; border-radius: var(--radius-lg); max-width: 460px; width: 90%; box-shadow: var(--shadow-lg); animation: scaleIn 0.2s cubic-bezier(0.16,1,0.3,1); }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .modal-box p { font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* ===== PRINT ===== */
+    @media print {
+      .sidebar, .actions-bar, .top-bar, .panel, .bulk-bar, .btn, .search-wrap, .fiscal-card, .dedup-card { display: none !important; }
+      .main { padding: 0; max-width: 100%; }
+      .table-card { box-shadow: none; border: 1px solid #ddd; }
+      .stat-card { box-shadow: none; border: 1px solid #ddd; }
+      body { background: #fff; color: #000; }
+      .comptable-panel { display: block !important; position: static !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 20px !important; background: #fff !important; overflow: visible !important; }
+      .comptable-panel .btn { display: none !important; }
+      .comptable-table { border-collapse: collapse !important; width: 100% !important; }
+      .comptable-table th, .comptable-table td { border: 1px solid #333 !important; padding: 6px 10px !important; font-size: 12px !important; }
+      .comptable-total-box { box-shadow: none !important; border: 2px solid #333 !important; page-break-inside: avoid; }
+      .comptable-card { box-shadow: none !important; border: 1px solid #999 !important; page-break-inside: avoid; }
+      .comptable-warning { border: 1px solid #999 !important; }
+    }
+
+    /* ===== ÉCRAN DE VERROUILLAGE ===== */
+    .gate { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; padding: 24px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0b2545 100%); }
+    .gate.hidden { display: none; }
+    .gate-card { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 32px 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.35); text-align: center; animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
+    .gate-icon { font-size: 40px; line-height: 1; margin-bottom: 12px; }
+    .gate-card h1 { font-family: 'Space Grotesk', sans-serif; font-size: 21px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .gate-card p.gate-sub { font-size: 13.5px; color: var(--text-muted); margin-bottom: 22px; }
+    .gate-card input { width: 100%; padding: 13px 16px; font-size: 17px; letter-spacing: 2px; text-align: center;
+      border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-alt); color: var(--text); }
+    .gate-card input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .gate-card .btn { width: 100%; margin-top: 14px; justify-content: center; padding: 13px; font-size: 15px; }
+    .gate-error { display: none; margin-top: 14px; font-size: 13px; font-weight: 600; color: #dc2626; }
+    .gate-error.show { display: block; }
+    .gate-note { margin-top: 20px; font-size: 11.5px; color: var(--text-muted); line-height: 1.5; }
+    .gate-brand { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; font-size: 11.5px; color: rgba(255,255,255,0.45); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1100px) { .cards-grid { grid-template-columns: repeat(3,1fr); } .form-grid { grid-template-columns: repeat(2,1fr); } .rate-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 900px) { .app { flex-direction: column; } .sidebar { width: 100%; height: auto; flex-direction: row; position: relative; padding: 16px; gap: 16px; overflow-x: auto; } .sidebar-nav, .sidebar-stats, .sidebar-footer { display: none; } .main { padding: 24px 20px; } .chart-container { flex-direction: column; } .ticket-preview .fields { grid-template-columns: repeat(2,1fr); } .dedup-entry { grid-template-columns: repeat(3,1fr) auto; } }
+    @media (max-width: 640px) { .cards-grid { grid-template-columns: repeat(2,1fr); } .form-grid, .rate-grid { grid-template-columns: 1fr; } .search-wrap input { width: 140px; } .search-wrap input:focus { width: 180px; } .import-tabs { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<!-- ===== ÉCRAN DE VERROUILLAGE ===== -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-icon">🔒</div>
+    <h1>Carnet Carburant</h1>
+    <p class="gate-sub">Accès protégé — saisissez votre code d’accès pour continuer.</p>
+    <form id="gate-form" autocomplete="off">
+      <input type="password" id="gate-input" placeholder="Code d’accès" aria-label="Code d’accès" autocomplete="current-password">
+      <button class="btn btn-primary" type="submit" id="gate-submit">Déverrouiller</button>
+    </form>
+    <div class="gate-error" id="gate-error">Code incorrect. Réessayez.</div>
+    <div class="gate-note">Vos données restent enregistrées dans ce navigateur, sur cet appareil uniquement.<br>Le code peut être modifié dans « 🔒 Code d’accès ».</div>
+  </div>
+  <div class="gate-brand">Suivi TICPE professionnel</div>
+</div>
+
+<div class="app" id="app" style="display:none;">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-icon">⛽</div>
+      <div><div class="sidebar-title">Carnet Carburant</div><div class="sidebar-subtitle">Suivi TICPE professionnel</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-section="dashboard">📋 <span>Tableau de bord</span></div>
+      <div class="nav-item" data-section="tickets">🧾 <span>Tickets</span></div>
+      <div class="nav-item" data-section="fiscal">📊 <span>Résumé fiscal</span></div>
+      <div class="nav-item" data-section="dedup">🔍 <span>Doublons</span></div>
+    </nav>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-stats">
+      <div class="sidebar-stat">
+        <div class="sidebar-stat-label">Total litres</div>
+        <div class="sidebar-stat-value blue" id="spine-litres">0 L</div>
+      </div>
+      <div class="sidebar-stat">
+        <div class="sidebar-stat-label">Remboursement</div>
+        <div class="sidebar-stat-value green" id="spine-remb">0 €</div>
+      </div>
+      <div class="sidebar-stat">
+        <div class="sidebar-stat-label">Prix moyen / L</div>
+        <div class="sidebar-stat-value amber" id="spine-prix-moy">—</div>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="theme-label">🌙 Sombre</div>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Basculer thème"></button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="page-header"><h1>Carnet Carburant</h1><p>Importez vos PDF UTA, photos de tickets, détectez les doublons et optimisez votre remboursement TICPE</p></header>
+
+    <div class="top-bar">
+      <div class="filters">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="f-search" placeholder="Rechercher..." autocomplete="off">
+        </div>
+        <select id="f-vehicule"><option value="">Tous véhicules</option></select>
+        <select id="f-carburant-filter"><option value="">Tous carburants</option></select>
+        <select id="f-periode"><option value="">Toutes périodes</option></select>
+        <div class="segmented">
+          <button class="seg-btn active" data-mode="mois">Mois</button>
+          <button class="seg-btn" data-mode="trimestre">Trimestre</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="toggle-wrap">
+          <label class="toggle-switch"><input type="checkbox" id="toggle-adblue" checked><span class="toggle-slider"></span></label>
+          <span>AdBlue visible</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-code-toggle">🔒 Code d’accès</button>
+        <button class="btn btn-secondary btn-sm" id="btn-rates-toggle">⚙️ Taux</button>
+        <button class="btn btn-secondary btn-sm" id="btn-fiscal-toggle">📊 Résumé fiscal</button>
+        <button class="btn btn-secondary btn-sm" id="btn-comptable-toggle">📋 Rapport comptable</button>
+      </div>
+    </div>
+
+    <!-- Panneau Code d'accès -->
+    <section class="panel" id="code-panel">
+      <h3>🔒 Code d’accès</h3>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Ce code est demandé à chaque ouverture de l’application. Il protège l’accès contre les curieux ; ce n’est pas un coffre-fort bancaire.</p>
+      <div class="form-grid">
+        <div class="field"><label>Code actuel</label><input type="password" id="code-old" autocomplete="off" placeholder="Code actuel"></div>
+        <div class="field"><label>Nouveau code (4 caractères minimum)</label><input type="password" id="code-new" autocomplete="off" placeholder="Nouveau code"></div>
+        <div class="field"><label>Confirmer le nouveau code</label><input type="password" id="code-new2" autocomplete="off" placeholder="Confirmation"></div>
+      </div>
+      <div class="status-box info" id="code-status" style="margin-top:14px;">Notez bien votre code : s’il est perdu, il faudra le réinitialiser et vos tickets déjà enregistrés resteront accessibles uniquement sur cet appareil.</div>
+      <div class="form-footer">
+        <button class="btn btn-primary" id="btn-save-code">💾 Enregistrer le nouveau code</button>
+        <button class="btn btn-secondary" id="btn-lock-now">🔒 Verrouiller maintenant</button>
+        <button class="btn btn-secondary" id="btn-close-code">Fermer</button>
+      </div>
+    </section>
+
+    <!-- Rate Panel -->
+    <section class="panel" id="rate-panel">
+      <h3>⚙️ Taux de remboursement TICPE</h3>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Consultez les taux officiels sur <a href="https://www.service-public.fr/professionnels-entreprises/vosdroits/F24154" target="_blank" style="color:var(--primary)">service-public.fr</a></p>
+      <div class="rate-grid" id="rate-grid"></div>
+      <div class="form-footer">
+        <button class="btn btn-primary" id="btn-save-rates">💾 Enregistrer</button>
+        <button class="btn btn-secondary" id="btn-close-rates">Fermer</button>
+      </div>
+    </section>
+
+    <!-- Fiscal Summary -->
+    <section class="fiscal-card" id="fiscal-panel">
+      <h3>📊 Résumé fiscal TICPE</h3>
+      <div id="fiscal-content"></div>
+      <div class="form-footer" style="margin-top:20px;">
+        <button class="btn btn-secondary" id="btn-close-fiscal">Fermer</button>
+        <button class="btn btn-primary" id="btn-print-fiscal">🖨️ Imprimer</button>
+      </div>
+    </section>
+
+    <!-- Comptable Report Panel -->
+    <section class="comptable-card panel" id="comptable-panel">
+      <div id="comptable-content"></div>
+      <div class="form-footer" style="margin-top:20px;">
+        <button class="btn btn-secondary" id="btn-close-comptable">Fermer</button>
+        <button class="btn btn-primary" id="btn-print-comptable">🖨️ Imprimer le rapport</button>
+      </div>
+    </section>
+
+    <!-- Duplicate Review Panel -->
+    <section class="dedup-card" id="dedup-panel">
+      <h3>🔍 Détection et suppression des doublons</h3>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Les tickets en vert sont conservés, ceux en rouge seront supprimés. Cliquez sur un ticket pour inverser son statut.</p>
+      <div id="dedup-content"></div>
+      <div class="form-footer" style="margin-top:20px;">
+        <button class="btn btn-danger" id="btn-dedup-delete">🗑️ Supprimer les doublons sélectionnés</button>
+        <button class="btn btn-secondary" id="btn-close-dedup">Fermer</button>
+      </div>
+    </section>
+
+    <!-- Import Panel -->
+    <section class="panel" id="import-panel">
+      <h3>📥 Importer des tickets</h3>
+      <div class="import-tabs">
+        <button class="import-tab active" data-tab="pdf">📄 PDF UTA</button>
+        <button class="import-tab" data-tab="image">📸 Photo ticket</button>
+        <button class="import-tab" data-tab="manual">✏️ Saisie manuelle</button>
+      </div>
+
+      <!-- PDF Tab -->
+      <div class="import-content active" id="tab-pdf">
+        <div class="pdf-dropzone" id="pdf-dropzone">
+          <div class="drop-icon">📂</div>
+          <div class="drop-text">Glissez-déposez vos PDF UTA ici ou cliquez pour sélectionner</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Relevés UTA, factures, tickets PDF — les PDF scannés (sans texte) sont lus automatiquement par OCR</div>
+          <input type="file" id="pdf-input" accept=".pdf" multiple class="hidden-input">
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>Immatriculation par défaut (utilisée si le PDF ne l’indique pas, ex. : ticket scanné)</label>
+          <input type="text" id="pdf-default-immat" placeholder="AB-123-CD">
+        </div>
+        <div id="pdf-progress-area"></div>
+        <div class="status-box info" id="pdf-status">Sélectionnez vos fichiers PDF…</div>
+        <div id="preview-list"></div>
+        <div class="form-footer">
+          <button class="btn btn-primary" id="btn-import-all" style="display:none;">✅ Créer tous les tickets</button>
+          <button class="btn btn-secondary" id="btn-close-import">Fermer</button>
+        </div>
+      </div>
+
+      <!-- Image Tab -->
+      <div class="import-content" id="tab-image">
+        <div class="img-dropzone" id="img-dropzone">
+          <div class="drop-icon">📸</div>
+          <div class="drop-text">Glissez-déposez vos photos de tickets ou cliquez pour sélectionner</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">JPG, PNG, WEBP — OCR automatique via Tesseract</div>
+          <input type="file" id="img-input" accept="image/*" multiple class="hidden-input">
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>Immatriculation par défaut (les tickets de caisse ne l'indiquent presque jamais)</label>
+          <input type="text" id="img-default-immat" placeholder="AB-123-CD">
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-secondary" id="btn-ocr-diag" type="button">🩺 Tester le lecteur de tickets</button>
+          <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">Vérifie que le moteur de lecture se charge correctement.</span>
+        </div>
+        <div id="ocr-progress-area"></div>
+        <div class="status-box info" id="img-status">Prenez en photo vos tickets de caisse…</div>
+        <div id="img-preview-list"></div>
+        <div class="form-footer">
+          <button class="btn btn-primary" id="btn-import-img-all" style="display:none;">✅ Créer tous les tickets</button>
+          <button class="btn btn-secondary" id="btn-close-import2">Fermer</button>
+        </div>
+      </div>
+
+      <!-- Manual Tab -->
+      <div class="import-content" id="tab-manual">
+        <form id="ticket-form-inline">
+          <div class="form-grid">
+            <div class="field"><label>Date *</label><input type="date" id="in-date" required></div>
+            <div class="field"><label>Véhicule *</label><input type="text" id="in-vehicule" placeholder="AB-123-CD" required></div>
+            <div class="field"><label>Carburant</label>
+              <select id="in-carburant">
+                <option>Gazole professionnel</option>
+                <option>Gazole non routier (GNR)</option>
+                <option>Essence</option>
+                <option>Superéthanol E85</option>
+                <option>GNV / bioGNV</option>
+                <option>Autre</option>
+              </select>
+            </div>
+            <div class="field"><label>Station / lieu</label><input type="text" id="in-lieu" placeholder="Nom de la station"></div>
+            <div class="field"><label>Quantité (L) *</label><input type="number" id="in-litres" step="0.01" min="0" required></div>
+            <div class="field"><label>Montant (€) *</label><input type="number" id="in-montant" step="0.01" min="0" required></div>
+            <div class="field"><label>Kilométrage</label><input type="number" id="in-km" step="1" min="0" placeholder="Compteur km"></div>
+            <div class="field"><label>N° ticket / Facture</label><input type="text" id="in-ref" placeholder="Référence"></div>
+            <div class="field span2"><label>Note</label><input type="text" id="in-note" placeholder="Commentaire"></div>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+            <button type="reset" class="btn btn-secondary">Réinitialiser</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Stat Cards -->
+    <section class="cards-grid">
+      <div class="stat-card"><div class="stat-icon">🧾 Tickets</div><div class="stat-value blue" id="sum-count">0</div><div class="stat-label">Nombre de tickets</div><div class="stat-bg">🧾</div></div>
+      <div class="stat-card"><div class="stat-icon">⛽ Volume</div><div class="stat-value green" id="sum-litres">0 L</div><div class="stat-label">Total litres</div><div class="stat-bg">⛽</div></div>
+      <div class="stat-card"><div class="stat-icon">💶 Dépenses</div><div class="stat-value" id="sum-montant">0 €</div><div class="stat-label">Montant total</div><div class="stat-bg">💶</div></div>
+      <div class="stat-card"><div class="stat-icon">💰 Remboursement</div><div class="stat-value amber" id="sum-remb">0 €</div><div class="stat-label">Remboursement TICPE</div><div class="stat-bg">💰</div></div>
+      <div class="stat-card"><div class="stat-icon">📈 Prix moyen</div><div class="stat-value purple" id="sum-prix-moy">—</div><div class="stat-label">€ / litre</div><div class="stat-bg">📈</div></div>
+      <div class="stat-card"><div class="stat-icon">⚠️ Doublons</div><div class="stat-value red" id="sum-duplicates">0</div><div class="stat-label">Doublons détectés</div><div class="stat-bg">⚠️</div></div>
+    </section>
+
+    <!-- Chart -->
+    <section class="chart-card" id="chart-card">
+      <h3>📊 Consommation mensuelle</h3>
+      <div class="chart-container">
+        <div class="chart-section">
+          <h4>Litres par mois</h4>
+          <div class="bar-chart" id="chart-litres"></div>
+        </div>
+        <div class="chart-section">
+          <h4>Dépenses par mois (€)</h4>
+          <div class="bar-chart" id="chart-depenses"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="actions-bar">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btn-toggle-import">📥 Importer</button>
+        <button class="btn btn-secondary" id="btn-dedup">🔍 Doublons</button>
+        <button class="btn btn-secondary" id="btn-export">📥 Export CSV</button>
+        <button class="btn btn-secondary" id="btn-export-json">💾 Sauvegarde JSON</button>
+        <button class="btn btn-secondary" id="btn-import-json">📂 Restaurer JSON</button>
+      </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-bar" id="bulk-bar">
+      <span class="count" id="bulk-count">0</span> sélectionné(s)
+      <button class="btn btn-sm btn-danger" id="btn-bulk-delete">🗑️ Supprimer</button>
+      <button class="btn btn-sm btn-secondary" id="btn-bulk-clear">✖ Annuler</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="cb-cell"><input type="checkbox" id="cb-all" title="Tout sélectionner"></th>
+              <th data-sort="date">Date <span class="sort-arrow">▼</span></th>
+              <th data-sort="vehicule">Véhicule <span class="sort-arrow">▼</span></th>
+              <th data-sort="carburant">Carburant <span class="sort-arrow">▼</span></th>
+              <th data-sort="lieu">Lieu <span class="sort-arrow">▼</span></th>
+              <th data-sort="litres" class="num">Litres <span class="sort-arrow">▼</span></th>
+              <th data-sort="montant" class="num">Montant <span class="sort-arrow">▼</span></th>
+              <th data-sort="km" class="num">Km <span class="sort-arrow">▼</span></th>
+              <th data-sort="remboursement" class="num">Remboursé <span class="sort-arrow">▼</span></th>
+              <th data-sort="periode">Période <span class="sort-arrow">▼</span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <p id="modal-message"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modal-cancel">Annuler</button>
+      <button class="btn btn-primary" id="modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="json-input" accept=".json" class="hidden-input">
+
+<script>
+'use strict';
+// Guard: if the PDF library is blocked by the network, the rest of the app
+// (including the photo/OCR part) must keep working.
+try{
+  if(typeof pdfjsLib !== 'undefined' && pdfjsLib.GlobalWorkerOptions){
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  }
+}catch(e){ console.warn('pdf.js indisponible :', e); }
+
+let entries = [];
+let editingId = null;
+let sortField = 'date';
+let sortDir = 'desc';
+let periodMode = 'mois';
+let pendingTickets = [];  // from PDF
+let pendingImgTickets = [];  // from OCR
+let selectedIds = new Set();
+let dedupGroups = [];  // for duplicate review
+let dedupRemoveIds = new Set();  // IDs marked for removal in dedup panel
+const STORAGE_KEYS = { entries: 'carnet_entries_v3', rates: 'carnet_taux_v3', theme: 'carnet_theme', adblueHidden: 'carnet_adblue_hidden_v3' };
+let hideAdBlue = loadStorage(STORAGE_KEYS.adblueHidden, false);
+const CARBURANTS = ['Gazole professionnel','Gazole non routier (GNR)','Essence','Superéthanol E85','GNV / bioGNV','Autre'];
+const DEFAULT_RATES = { 'Gazole professionnel':0.1556, 'Gazole non routier (GNR)':0, 'Essence':0, 'Superéthanol E85':0, 'GNV / bioGNV':0, 'Autre':0 };
+let rates = { ...DEFAULT_RATES };
+
+const fmtEUR = (n) => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(n||0);
+const fmtL = (n) => `${new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2}).format(n||0)} L`;
+const fmtKm = (n) => n ? `${new Intl.NumberFormat('fr-FR').format(n)} km` : '—';
+const sanitize = (s) => String(s||'').trim();
+const escapeHtml = (s) => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+/* ===== DUPLICATE DETECTION (enhanced) ===== */
+// Key-based exact duplicate detection
+function makeTicketKey(e){
+  const d = sanitize(e.date);
+  const v = sanitize(e.vehicule).toLowerCase();
+  const l = Math.round((e.litres||0)*100);
+  const m = Math.round((e.montant||0)*100);
+  return `${d}|${v}|${l}|${m}`;
+}
+
+// Fuzzy duplicate: same date + same vehicle, similar litres (±5%) or similar montant (±5%)
+function makeFuzzyKey(e){
+  const d = sanitize(e.date);
+  const v = sanitize(e.vehicule).toLowerCase();
+  const l = Math.round((e.litres||0)); // rounded to litre
+  return `${d}|${v}|${l}`;
+}
+
+function findDuplicate(newEntry){
+  const key = makeTicketKey(newEntry);
+  return entries.findIndex(x => makeTicketKey(x) === key);
+}
+
+function findFuzzyDuplicate(newEntry){
+  const fkey = makeFuzzyKey(newEntry);
+  return entries.findIndex(x => {
+    if(makeTicketKey(x) === makeTicketKey(newEntry)) return true; // exact
+    const fk = makeFuzzyKey(x);
+    if(fk !== fkey) return false;
+    // same date+vehicle+rounded litres, check montant closeness
+    const diffM = Math.abs((x.montant||0) - (newEntry.montant||0));
+    const avgM = ((x.montant||0) + (newEntry.montant||0)) / 2;
+    return avgM > 0 && (diffM / avgM) < 0.05;
+  });
+}
+
+// Build groups of duplicates for the review panel
+function buildDuplicateGroups(){
+  const groups = [];
+  const processed = new Set();
+  
+  entries.forEach((e, idx) => {
+    if(processed.has(e.id)) return;
+    
+    // Find all entries matching this one (exact or fuzzy)
+    const matches = entries.filter(x => x.id !== e.id && !processed.has(x.id) && (
+      makeTicketKey(x) === makeTicketKey(e) || // exact match
+      (sanitize(x.date) === sanitize(e.date) && 
+       sanitize(x.vehicule).toLowerCase() === sanitize(e.vehicule).toLowerCase() &&
+       Math.abs((x.litres||0) - (e.litres||0)) < 0.5 &&
+       Math.abs((x.montant||0) - (e.montant||0)) < 0.5) // near-exact match
+    ));
+    
+    if(matches.length > 0){
+      const group = [e, ...matches];
+      group.forEach(x => processed.add(x.id));
+      groups.push(group);
+    }
+  });
+  
+  return groups;
+}
+
+/* ===== UTA PDF PARSER (line by line) ===== */
+function parseUtaPdfText(fullText, filename='', rawLines=null){
+  const tickets = [];
+  const lines = (rawLines || fullText.split(/\n/)).map(l => l.trim()).filter(Boolean);
+  
+  // Normalize: strip soft hyphens (\u00AD) that break regex matching
+  const normLines = lines.map(l => l.replace(/\u00AD/g, '-').replace(/\u2011/g, '-'));
+  
+  // Detect if this is a UTA statement
+  const isUta = /UNION TANK|UTA|Edenred|Relev[\u00E9ee] des enl[\u00E8ee]vements/i.test(fullText);
+  
+  // ========== UTA-SPECIFIC PARSER ==========
+  if(isUta){
+    let currentImmat = '';
+    let currentCardNum = '';
+    
+    for(let i = 0; i < normLines.length; i++){
+      const line = normLines[i];
+      
+      // 1. Check for immatriculation header line
+      // Formats: "Immatriculation: DB 173 PB" or "Immatriculation: CARTE 2"
+      const immatMatch = line.match(/Immatriculation\s*:\s*(.+)?\s+N[\u00B0o]\s+de\s+carte/i);
+      if(immatMatch){
+        let immatRaw = immatMatch[1].trim();
+        // Try standard French plate: XX XXX XX or XX-XXX-XX
+        const plateM = immatRaw.match(/([A-Z]{2}[\s-]?\d{2,3}[\s-]?[A-Z]{2})/i);
+        if(plateM){
+          currentImmat = plateM[1].replace(/\s+/g, '-').toUpperCase();
+        } else if(/^CARTE\s+\d+/i.test(immatRaw)){
+          // "CARTE 2" — card without vehicle plate
+          currentImmat = immatRaw.trim();
+        } else {
+          // Fallback: take everything before the card number
+          currentImmat = immatRaw.replace(/\s+/g, ' ').trim();
+        }
+        // Also extract card number
+        const cardMatch = line.match(/N[\u00B0o]\s+de\s+carte\s*:\s*([\d\s]+)/i);
+        if(cardMatch) currentCardNum = cardMatch[1].replace(/\s+/g,'').trim();
+        continue;
+      }
+      
+      // 2. Skip non-transaction lines
+      if(/^Total\b/i.test(line)) continue;  // subtotal lines
+      if(/^TOTAL\b/i.test(line)) continue;  // grand total
+      if(/Abreviations|Abr[\u00E9e]viations/i.test(line)) continue;
+      if(/Pour tout renseignement/i.test(line)) continue;
+      if(/Page\s*:/i.test(line)) continue;
+      if(/N[\u00B0o]\s+Partenaire/i.test(line)) continue;
+      if(/Produit/i.test(line) && /Lieu/i.test(line)) continue;
+      if(/Montants\s+dans/i.test(line)) continue;
+      if(/UNION\s+TANK/i.test(line)) continue;
+      if(/^Relev[\u00E9ee]\s/i.test(line)) continue;
+      if(/date\s+factur/i.test(line)) continue;
+      if(/^\|$/i.test(line)) continue;
+      if(/Type\s+de\s+carte/i.test(line)) continue;
+      if(/TVA.*Montants.*devises/i.test(line)) continue;
+      if(/Date.*Produit/i.test(line)) continue;
+      if(/Km.*Valeur/i.test(line)) continue;
+      if(/Kleinostheim|Heinrich/i.test(line) && !/\d{2}\.\d{2}\.\d{4}/.test(line)) continue;
+      if(/AS&fils|Route des Rouges|La Bourgonce/i.test(line) && !/\d{2}\.\d{2}\.\d{4}/.test(line)) continue;
+      if(line.length < 15) continue;
+      
+      // 3. Try to parse as a UTA transaction line
+      // Flexible approach: match the date, product, LTR value, and amount
+      // Format: DD.MM.YYYY  Product – Station,City  NNNNNN  FRA  ...  XXX,XX LTR  ...  EUR  X,XXXX  XXX,XX  X,XX  XXX,XX  XXX,XX  XXX,XX  XXX,XX
+      
+      // Step 1: Match date at start
+      const dateMatch = line.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+/);
+      if(!dateMatch) continue;
+      const date = dateMatch[3] + '-' + dateMatch[2] + '-' + dateMatch[1];
+      
+      // Step 2: Match product keyword after date
+      const prodMatch = line.substring(dateMatch[0].length).match(/^(Gasoil|AdBlue|Diesel|Super|E10|E5|SP95|SP98|Essence|GNR)\s*[\u2013\-\s]+/i);
+      if(!prodMatch) continue;
+      const produit = prodMatch[1];
+      
+      // Determine carburant
+      let carburant = 'Gazole professionnel';
+      const upProd = produit.toUpperCase();
+      if(/ADBLUE|ADB|AD\.BLUE/i.test(produit)) carburant = 'AdBlue';
+      else if(/GNR|NON.?ROUTIER/i.test(produit)) carburant = 'Gazole non routier (GNR)';
+      else if(/ESSENCE|SP95|SP98|E5|E10|SUPER/i.test(upProd)) carburant = 'Essence';
+      else if(/E85/i.test(upProd)) carburant = 'Super\u00E9thanol E85';
+      
+      // Step 3: Find litres value (XXX,XX LTR)
+      const litreMatch = line.match(/(\d+[,.]\d{2})\s*LTR/i);
+      if(!litreMatch) continue;
+      const litres = parseFloat(litreMatch[1].replace(',', '.'));
+      if(litres <= 0) continue;
+      
+      // Step 4: Extract station/lieu from text between product and PAC number
+      const afterProd = line.substring(dateMatch[0].length + prodMatch[0].length);
+      // PAC number is typically 5-6 digits
+      const pacMatch = afterProd.match(/^(.+?)\s+(\d{5,6})\s/);
+      let lieu = '';
+      let ref = '';
+      let km = '';
+      if(pacMatch){
+        lieu = pacMatch[1].trim();
+        // Clean up lieu
+        lieu = lieu.replace(/[\u00AD\u2011]/g, '-').trim();
+        // Extract justificatif and km from remaining text after PAC
+        const afterPac = afterProd.substring(pacMatch[0].length - 1);
+        // Pattern: FRA  NNNNNNN  NNNNNN  where second is km
+        const detailsMatch = afterPac.match(/([A-Z]{3})\s+(\S+)\s+(\d+)/);
+        if(detailsMatch){
+          ref = detailsMatch[2];
+          km = detailsMatch[3];
+          if(km === '0') km = '';
+        }
+      }
+      
+      // Step 5: Find montant (total net) — look for numbers after the currency EUR
+      // In UTA PDFs, the pattern is: ... RC_N EUR  prix_unit  val_march  service  total_net ...
+      // We must match from "RC_N EUR" or the LAST "EUR" to avoid matching litres/qty numbers before it
+      const rcEurMatch = line.match(/RC_N\s+EUR\s+(.+)$/i);
+      const eurMatch = rcEurMatch || line.match(/EUR\s+(.+)$/i);
+      if(!eurMatch) continue;
+      const afterEur = eurMatch[1];
+      // Extract all decimal numbers (handle French format: 1.234,56)
+      const allNums = [];
+      const numRegex = /\d{1,3}(?:\.\d{3})*,\d{2,4}|\d+,\d{2,4}|\d+\.\d{2,4}/g;
+      let nm;
+      while((nm = numRegex.exec(afterEur)) !== null){
+        const raw = nm[0];
+        // Convert French number: 1.234,56 -> 1234.56, 103,18 -> 103.18
+        const val = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
+        allNums.push(val);
+      }
+      
+      if(allNums.length < 4) continue; // Need at least: prix_unit, val_march, service, total_net
+      
+      // UTA format after EUR: prix_unit  val_march  service  total_net  total_brut  total_net  total_net
+      // The 4th number (index 3) is the total net (montant)
+      const montant = allNums[3];
+      if(montant <= 0) continue;
+      
+      // Clean up lieu — format is usually "STATION,City" or "STATION, City"
+      // Split on the LAST comma (station names like "ESSO EXPRESS" or "TOTAL ACCESS" may contain spaces)
+      if(lieu){
+        const lastComma = lieu.lastIndexOf(',');
+        if(lastComma > 0){
+          lieu = lieu.substring(0, lastComma).trim() + ', ' + lieu.substring(lastComma + 1).trim();
+        }
+        // Also handle dash-connected city names that lost their soft hyphens
+        // e.g. "SaintDizier" → keep as-is (we stripped soft hyphens already)
+      }
+      
+      tickets.push({
+        date: date,
+        vehicule: currentImmat || '',
+        carburant: carburant,
+        lieu: lieu,
+        litres: litres,
+        montant: montant,
+        km: km,
+        ref: ref,
+        note: filename
+      });
+    }
+    
+    if(tickets.length > 0) return tickets;
+  }
+  
+  // ========== LECTURE DES PDF QUI NE SONT PAS DES RELEVÉS ==========
+  // Un PDF peut contenir soit une liste de transactions (plusieurs lignes
+  // complètes), soit un seul ticket présenté sur plusieurs lignes
+  // (Date:… / Volume:… / Total:…). Le lecteur ligne à ligne ne convient
+  // qu'au premier cas ; pour un ticket unique il faut lire tout le texte
+  // d'un bloc, comme pour une photo de ticket.
+  const parLigne = [];
+  for(const line of lines){
+    let parsed = extractLineFlexible(line);
+    if(parsed && parsed.date && parsed.litres > 0 && parsed.montant > 0){
+      parsed.note = filename;
+      parLigne.push(parsed);
+    }
+  }
+
+  // Lecture « ticket unique » sur le texte complet (lecteur de ticket de caisse)
+  let ticketUnique = null;
+  try{
+    const c = parseOcrText(fullText, filename);
+    if(c && c.litres > 0 && c.montant > 0) ticketUnique = c;
+  }catch(e){ /* ignore */ }
+
+  if(parLigne.length >= 2){
+    // Plusieurs transactions détectées : c'est bien une liste.
+    tickets.push(...parLigne);
+  }else if(ticketUnique){
+    tickets.push(ticketUnique);
+  }else if(parLigne.length === 1){
+    tickets.push(parLigne[0]);
+  }
+
+  // Dernier recours : lecture générique du texte complet
+  if(tickets.length === 0){
+    const fallback = parseGenericPdfText(fullText, filename);
+    if(fallback.date && fallback.litres > 0 && fallback.montant > 0){
+      tickets.push(fallback);
+    }
+  }
+  
+  return tickets;
+}
+
+/* Flexible line parser — handles generic non-UTA PDFs and OCR output */
+function extractLineFlexible(line){
+  const result = { date:'', vehicule:'', carburant:'Gazole professionnel', lieu:'', litres:0, montant:0, km:'', ref:'' };
+  
+  // Must have at least a date and some numbers
+  const dateM = line.match(/(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{2,4})/);
+  if(!dateM) return null;
+  
+  let yr = dateM[3];
+  if(yr.length === 2) yr = yr < 50 ? '20'+yr : '19'+yr;
+  result.date = yr + '-' + dateM[2] + '-' + dateM[1];
+  
+  // Une vraie ligne de transaction mentionne des litres (« L ») ou un carburant.
+  // Sans cela on risque de prendre une heure ou un numéro pour des litres.
+  if(!/\d\s*[lL]\b/.test(line) && !/GAZOLE|DIESEL|GNR|ESSENCE|SP9[58]|E10|E85|ADBLUE|CARBURANT/i.test(line)) return null;
+
+  // Extract vehicle
+  const immM = line.match(/([A-Z]{2}[- ]?\d{3}[- ]?[A-Z]{2})/);
+  if(immM) result.vehicule = immM[1].replace(/ /g,'-').toUpperCase();
+
+  // On retire l'immatriculation avant de chercher les nombres : ses chiffres
+  // (ex. « AB-123-CD ») seraient sinon pris pour un montant.
+  let afterDate = line.substring(line.indexOf(dateM[0]) + dateM[0].length);
+  if(immM) afterDate = afterDate.split(immM[1]).join(' ');
+  afterDate = afterDate.replace(/\b\d{1,2}\s*[:hH]\s*\d{2}\b/g, ' '); // heures
+
+  const numMatches = afterDate.match(/\d+(?:[.,]\d+)?/g) || [];
+  const nums = numMatches.map(n => parseFloat(n.replace(',','.'))).filter(n => n > 0 && n < 100000);
+  if(nums.length < 2) return null;
+
+  // Litres : nombre suivi de « L » / « LTR »
+  const litreM = afterDate.match(/(\d+(?:[.,]\d+)?)\s*(?:LTR|L)\b/i);
+  if(litreM) result.litres = parseFloat(litreM[1].replace(',','.'));
+
+  // Prix au litre : nombre à 3-4 décimales, ou entre 0,4 et 5 €
+  let prixL = 0;
+  const prixM = afterDate.match(/\b(\d[.,]\d{3,4})\b/);
+  if(prixM){
+    const p = parseFloat(prixM[1].replace(',','.'));
+    if(p >= 0.3 && p <= 6) prixL = p;
+  }
+
+  // Montant : parmi les nombres à 2 décimales, celui qui colle le mieux
+  // à litres × prix au litre (sinon plage de prix plausible 0,5 – 4 €/L).
+  const deuxDec = (afterDate.match(/\d+(?:\.\d{3})*[.,]\d{2}\b/g) || [])
+    .map(n => parseFloat(n.replace(/\.(?=\d{3}\b)/g,'').replace(',','.')))
+    .filter(n => n > 0);
+  const pool = deuxDec.length ? deuxDec : nums;
+
+  if(result.litres > 0){
+    const cible = prixL ? result.litres * prixL : 0;
+    const plage = pool.filter(n => n !== result.litres && n >= result.litres*0.4 && n <= result.litres*5);
+    if(cible){
+      const best = (plage.length ? plage : pool).reduce((a,b) =>
+        Math.abs(b - cible) < Math.abs(a - cible) ? b : a);
+      result.montant = best;
+    }else if(plage.length){
+      result.montant = Math.min(...plage);
+    }else{
+      const remain = pool.filter(n => n !== result.litres);
+      if(remain.length) result.montant = Math.max(...remain);
+    }
+  } else {
+    // Pas de « L » : litres = avant-dernier nombre, montant = le plus grand
+    const sorted = [...pool].sort((a,b) => a-b);
+    result.litres = sorted.length >= 2 ? sorted[sorted.length - 2] : sorted[0];
+    result.montant = sorted[sorted.length - 1];
+  }
+  
+  // Carburant
+  const up = line.toUpperCase();
+  if(/DIESEL|GAZOLE|DIE|DSL/.test(up)) result.carburant = 'Gazole professionnel';
+  else if(/GNR|NON.?ROUTIER/.test(up)) result.carburant = 'Gazole non routier (GNR)';
+  else if(/E85/.test(up)) result.carburant = 'Super\u00E9thanol E85';
+  else if(/ESSENCE|SP95|SP98|E5|E10|SUPER/.test(up)) result.carburant = 'Essence';
+  
+  // Station
+  const stationNames = ['TOTALENERGIES','TOTAL','SHELL','ESSO','AUCHAN','CARREFOUR','LECLERC','INTERMARCHE','INTERMARCH\u00C9','BP','AVIA','ELF','ENI','AGIP','REPSOL','CORA','MATCH','SUPER U','CASINO','G\u00C9ANT','COSTCO','WRE','OMV','JET','ARAL','AS 24','DKV','UTA'];
+  const lineUp = line.toUpperCase();
+  for(const nom of stationNames){
+    if(lineUp.includes(nom)){
+      result.lieu = nom.charAt(0) + nom.slice(1).toLowerCase();
+      result.lieu = result.lieu.replace(/As 24/,'AS 24').replace(/Super u/,'Super U').replace(/Intermarche/,'Intermarch\u00E9');
+      break;
+    }
+  }
+  
+  return result;
+}
+
+/* ===== GENERIC PDF PARSER (fallback) ===== */
+function parseGenericPdfText(text, filename=''){ 
+  const e = {date:'',vehicule:'',carburant:'Gazole professionnel',lieu:'',litres:0,montant:0,km:'',ref:'',note:filename};
+  const dM=text.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+  if(dM) e.date=`${dM[3]}-${dM[2]}-${dM[1]}`;
+  const mM=text.match(/(?:total|montant|prix|règlement|net à payer|betrag|amount)\D*(\d+(?:[,.]\d+)?)/i);
+  if(mM) e.montant=parseFloat(mM[1].replace(',','.'));
+  const lM=text.match(/(\d+(?:[,.]\d+)?)\s*(?:l|litres|litre|liter)/i);
+  if(lM) e.litres=parseFloat(lM[1].replace(',','.'));
+  const immM=text.match(/(?:immatriculation|plaque|véhicule|kennzeichen|fahrzeug)\s*[:#]?\s*([A-Z]{2}[- ]?\d{3}[- ]?[A-Z]{2})/i)||text.match(/\b([A-Z]{2}[- ]?\d{3}[- ]?[A-Z]{2})\b/);
+  if(immM) e.vehicule=immM[1].replace(/ /g,'-').toUpperCase();
+  const ens=['TOTALENERGIES','SHELL','ESSO','AUCHAN','CARREFOUR','LECLERC','INTERMARCHE','BP','AVIA','ELF','ENI','AGIP','REPSOL','ARAL','JET','AS 24','DKV','UTA','OMV','WRE'];
+  const up=text.toUpperCase();
+  for(const nom of ens) if(up.includes(nom)){e.lieu=nom.charAt(0)+nom.slice(1).toLowerCase();break}
+  if(/GAZOLE|DIESEL|DIE|DSL/.test(up)) e.carburant='Gazole professionnel';
+  else if(/GNR|NON.?ROUTIER/.test(up)) e.carburant='Gazole non routier (GNR)';
+  else if(/E85/.test(up)) e.carburant='Superéthanol E85';
+  else if(/ESSENCE|SP95|SP98|E5|E10|SUPER/.test(up)) e.carburant='Essence';
+  const rM=text.match(/(?:n°|facture|ticket|référence|beleg|rechnung|ref)\s*[:#]?\s*([A-Z0-9\-\/]{5,})/i);
+  if(rM) e.ref=rM[1];
+  const kmM=text.match(/(?:km|kilométrage|compteur)\s*[:#]?\s*(\d{1,7})/i);
+  if(kmM) e.km=parseInt(kmM[1]);
+  return e;
+}
+
+/* ===== PDF READING ===== */
+async function readPdfFile(file){
+  try{
+    if(typeof pdfjsLib === 'undefined' || !pdfjsLib.getDocument){
+      return { tickets: [], fullText: '', textLen: 0, doc: null,
+               error: "la biblioth\u00e8que de lecture PDF n'a pas pu \u00eatre charg\u00e9e (connexion Internet ou r\u00e9seau bloqu\u00e9)." };
+    }
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    let fullText = '';
+    let lineTexts = []; // Store per-line content
+    
+    for(let i=1; i<=pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      
+      // Get items with their Y positions for line-by-line grouping
+      const items = content.items.filter(x => x.str && x.str.trim());
+      
+      // Group by Y position (same line)
+      const lineMap = new Map();
+      for(const item of items){
+        const y = Math.round(item.transform[5]); // Y position
+        if(!lineMap.has(y)) lineMap.set(y, []);
+        lineMap.get(y).push({
+          x: item.transform[4],
+          text: item.str.trim()
+        });
+      }
+      
+      // Sort lines by Y (top to bottom) and items by X (left to right)
+      const sortedLines = [...lineMap.entries()]
+        .sort((a,b) => b[0] - a[0]) // PDF Y is bottom-up, so reverse
+        .map(([,items]) => {
+          items.sort((a,b) => a.x - b.x);
+          return items.map(i => i.text).join(' ');
+        });
+      
+      lineTexts.push(...sortedLines);
+      fullText += sortedLines.join('\n') + '\n';
+    }
+    
+    // Parse line by line using the UTA-aware parser
+    const tickets = parseUtaPdfText(fullText, file.name, lineTexts);
+    return {
+      tickets,
+      fullText,
+      textLen: fullText.replace(/\s/g, '').length,
+      doc: pdf,
+      error: null
+    };
+  } catch(err){
+    console.error('PDF read error:', err);
+    return { tickets: [], fullText: '', textLen: 0, doc: null,
+             error: (err && err.message) ? err.message : String(err) };
+  }
+}
+
+/* Rend chaque page du PDF en image : indispensable pour les tickets scann\u00e9s,
+   qui ne contiennent aucun texte s\u00e9lectionnable. */
+async function renderPdfPagesToImages(doc, maxPages, onStatus){
+  const urls = [];
+  const n = Math.min(doc.numPages, maxPages);
+  for(let i = 1; i <= n; i++){
+    if(onStatus) onStatus(`Conversion de la page ${i}/${n} en image\u2026`);
+    const page = await doc.getPage(i);
+    const base = page.getViewport({ scale: 1 });
+    const scale = Math.max(1.5, Math.min(3.5, 1700 / (base.width || 600)));
+    const vp = page.getViewport({ scale });
+    const cv = document.createElement('canvas');
+    cv.width  = Math.round(vp.width);
+    cv.height = Math.round(vp.height);
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    urls.push(cv.toDataURL('image/png'));
+  }
+  return urls;
+}
+
+/* ===== IMAGE PREPROCESSING FOR OCR ===== */
+// Receipts photographed with a phone are usually too small / low contrast for
+// Tesseract. We build TWO variants of every photo and let the OCR try both:
+//   A) upscaled grayscale with contrast stretching (best on clean tickets)
+//   B) same + adaptive (Otsu) black & white (best on faded thermal paper)
+function prepareImageVariants(dataUrl){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try{
+        // Upscale so the width is ~1800px (Tesseract likes ~300dpi text)
+        const MIN_W = 1600, MAX_W = 2600;
+        let scale = 1;
+        if(img.width < MIN_W) scale = MIN_W / img.width;
+        if(img.width * scale > MAX_W) scale = MAX_W / img.width;
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const d = imgData.data;
+        const total = w * h;
+
+        // 1st pass: grayscale + histogram
+        const hist = new Uint32Array(256);
+        const gray = new Uint8ClampedArray(total);
+        for(let i = 0, p = 0; i < d.length; i += 4, p++){
+          const g = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) | 0;
+          gray[p] = g;
+          hist[g]++;
+        }
+
+        // Contrast stretch between the 2% and 98% percentiles
+        let lo = 0, hi = 255, acc = 0;
+        for(let v = 0; v < 256; v++){ acc += hist[v]; if(acc > total * 0.02){ lo = v; break; } }
+        acc = 0;
+        for(let v = 255; v >= 0; v--){ acc += hist[v]; if(acc > total * 0.02){ hi = v; break; } }
+        if(hi - lo < 20){ lo = 0; hi = 255; }
+        const range = hi - lo;
+
+        const stretched = new Uint8ClampedArray(total);
+        const hist2 = new Uint32Array(256);
+        for(let p = 0; p < total; p++){
+          let v = (gray[p] - lo) * 255 / range;
+          v = v < 0 ? 0 : v > 255 ? 255 : v;
+          v |= 0;
+          stretched[p] = v;
+          hist2[v]++;
+        }
+
+        // Variant A: grayscale + contrast
+        for(let i = 0, p = 0; i < d.length; i += 4, p++){
+          d[i] = d[i+1] = d[i+2] = stretched[p]; d[i+3] = 255;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        const variantA = canvas.toDataURL('image/png');
+
+        // Otsu threshold on the stretched histogram
+        let sum = 0;
+        for(let v = 0; v < 256; v++) sum += v * hist2[v];
+        let sumB = 0, wB = 0, best = 0, thr = 128;
+        for(let v = 0; v < 256; v++){
+          wB += hist2[v];
+          if(!wB) continue;
+          const wF = total - wB;
+          if(!wF) break;
+          sumB += v * hist2[v];
+          const mB = sumB / wB, mF = (sum - sumB) / wF;
+          const between = wB * wF * (mB - mF) * (mB - mF);
+          if(between > best){ best = between; thr = v; }
+        }
+
+        // Dark photo (white text on black)? invert so text stays dark on white
+        let dark = 0;
+        for(let p = 0; p < total; p += 7) if(stretched[p] < thr) dark++;
+        const invert = dark > (total / 7) * 0.6;
+
+        // Variant B: black & white, threshold slightly biased to keep thin strokes
+        const bias = 8;
+        for(let i = 0, p = 0; i < d.length; i += 4, p++){
+          let on = stretched[p] < (thr + bias);   // true = ink
+          if(invert) on = !on;
+          const v = on ? 0 : 255;
+          d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        const variantB = canvas.toDataURL('image/png');
+
+        resolve([
+          { label: 'photo améliorée', url: variantA },
+          { label: 'noir & blanc',    url: variantB },
+        ]);
+      } catch(e){
+        console.warn('Preprocessing failed, using original image:', e);
+        resolve([{ label: 'image d\u2019origine', url: dataUrl }]);
+      }
+    };
+    img.onerror = () => resolve([{ label: 'image d\u2019origine', url: dataUrl }]);
+    img.src = dataUrl;
+  });
+}
+
+/* ===== OCR ENGINE LOADING (résilient) ===== */
+// The OCR engine (tesseract.js) + its language data are downloaded from a CDN.
+// Phones / office networks sometimes block one CDN, so we try several in turn
+// and report a clear French message if none of them answers.
+const OCR_CDNS = [
+  {
+    name: 'jsDelivr',
+    lib:  'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
+    worker:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+    core: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd.wasm.js',
+    lang: 'https://tessdata.projectnaptha.com/4.0.0',
+  },
+  {
+    name: 'unpkg',
+    lib:  'https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js',
+    worker:'https://unpkg.com/tesseract.js@5.1.1/dist/worker.min.js',
+    core: 'https://unpkg.com/tesseract.js-core@5.1.1/tesseract-core-simd.wasm.js',
+    lang: 'https://tessdata.projectnaptha.com/4.0.0',
+  },
+  {
+    name: 'cdnjs',
+    lib:  'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js',
+    worker:'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/worker.min.js',
+    core: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd.wasm.js',
+    lang: 'https://tessdata.projectnaptha.com/4.0.0',
+  },
+];
+
+let _ocrCdn = null;   // CDN whose library actually loaded
+
+function loadScriptOnce(src){
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-ocr-src="${src}"]`);
+    if(existing && existing.dataset.loaded === '1') return resolve();
+    const el = document.createElement('script');
+    el.src = src;
+    el.async = true;
+    el.dataset.ocrSrc = src;
+    el.onload = () => { el.dataset.loaded = '1'; resolve(); };
+    el.onerror = () => reject(new Error('Téléchargement impossible : ' + src));
+    document.head.appendChild(el);
+  });
+}
+
+// Makes sure window.Tesseract exists, trying every CDN in turn.
+async function ensureTesseract(onStatus){
+  if(typeof Tesseract !== 'undefined' && Tesseract && Tesseract.createWorker){
+    if(!_ocrCdn) _ocrCdn = OCR_CDNS[0];
+    return _ocrCdn;
+  }
+  const localFile = (location.protocol === 'file:');
+  const errors = [];
+  for(const cdn of OCR_CDNS){
+    try{
+      if(onStatus) onStatus(`Téléchargement du moteur OCR (${cdn.name})…`);
+      await loadScriptOnce(cdn.lib);
+      if(typeof Tesseract !== 'undefined' && Tesseract && Tesseract.createWorker){
+        _ocrCdn = cdn;
+        return cdn;
+      }
+      errors.push(cdn.name + ' : librairie vide');
+    }catch(e){
+      errors.push(cdn.name + ' : ' + (e && e.message ? e.message : e));
+    }
+  }
+  if(localFile){
+    throw new Error("moteur OCR inaccessible. La page est ouverte depuis le disque (file://) : certains navigateurs bloquent le lecteur dans ce mode. Ouvrez l'application via son lien web, ou réessayez avec une connexion Internet active. Détails : " + errors.join(' / '));
+  }
+  throw new Error('moteur OCR inaccessible (vérifiez votre connexion Internet). Détails : ' + errors.join(' / '));
+}
+
+/* ===== OCR IMAGE PARSING ===== */
+// Creates a Tesseract worker, degrading gracefully:
+// français+anglais → français → anglais. If the language file cannot be
+// downloaded we still get a usable engine instead of a silent failure.
+async function createOcrWorker(cdn, logger){
+  const langSets = [['fra','eng'], ['fra'], ['eng']];
+  const errors = [];
+  for(const langs of langSets){
+    try{
+      return await Tesseract.createWorker(langs, 1, {
+        workerPath: cdn.worker,
+        corePath:   cdn.core,
+        langPath:   cdn.lang,
+        logger,
+        errorHandler: err => console.error('Tesseract worker error:', err),
+      });
+    }catch(e){
+      errors.push(langs.join('+') + ' : ' + (e && e.message ? e.message : e));
+    }
+  }
+  // Last resort: let tesseract.js use all its own default paths
+  try{
+    return await Tesseract.createWorker('eng', 1, { logger });
+  }catch(e){
+    errors.push('défaut : ' + (e && e.message ? e.message : e));
+  }
+  throw new Error('initialisation du moteur OCR impossible — ' + errors.join(' / '));
+}
+
+function scoreOcrCandidate(cand, rawText){
+  return (cand.date ? 3 : 0) + (cand.litres > 0 ? 3 : 0) + (cand.montant > 0 ? 3 : 0)
+       + (cand.lieu ? 1 : 0) + (cand.vehicule ? 1 : 0)
+       + Math.min(2, (rawText || '').trim().length / 400);
+}
+
+/* Moteur OCR partagé : reçoit une ou plusieurs images (data URL) et renvoie
+   le meilleur résultat lu. Utilisé pour les photos ET pour les PDF scannés. */
+async function ocrImagesToBest(dataUrls, filename, setTxt, setBar){
+  let worker = null;
+  try{
+    const cdn = await ensureTesseract(setTxt);
+    if(setTxt) setTxt('Démarrage du moteur OCR…');
+
+    let ocrPassLabel = 'Reconnaissance OCR';
+    worker = await createOcrWorker(cdn, m => {
+      if(m && typeof m.progress === 'number' && m.status === 'recognizing text'){
+        if(setBar) setBar(Math.round(m.progress * 100));
+        if(setTxt) setTxt(`${ocrPassLabel} ${Math.round(m.progress * 100)}%…`);
+        return;
+      }
+      const statusMap = {
+        'loading tesseract core': 'Chargement du noyau OCR…',
+        'loaded tesseract core': 'Noyau OCR chargé',
+        'initializing tesseract': 'Initialisation du moteur…',
+        'loading language traineddata': 'Chargement des données de langue…',
+        'loaded language traineddata': 'Données de langue chargées',
+        'initializing api': 'Préparation de la lecture…',
+        'initialized api': 'Moteur prêt',
+      };
+      if(m && statusMap[m.status]){ if(setTxt) setTxt(statusMap[m.status]); }
+      else if(m && m.status){ if(setTxt) setTxt('Étape : ' + m.status); }
+    });
+
+    const psms = [
+      { psm: '6', label: 'Lecture du ticket' },
+      { psm: '4', label: 'Nouvelle tentative' },
+    ];
+
+    let best = null;
+    let allText = '';
+    outer:
+    for(let u = 0; u < dataUrls.length; u++){
+      const variants = await prepareImageVariants(dataUrls[u]);
+      for(let v = 0; v < variants.length; v++){
+        for(let i = 0; i < psms.length; i++){
+          const pass = psms[i];
+          const pageTag = dataUrls.length > 1 ? ` p.${u+1}` : '';
+          ocrPassLabel = `${pass.label}${pageTag} (${variants[v].label})`;
+          try{
+            await worker.setParameters({
+              tessedit_pageseg_mode: pass.psm,
+              preserve_interword_spaces: '1',
+              user_defined_dpi: '300',
+            });
+          }catch(e){ /* certains builds refusent un paramètre : on continue */ }
+
+          let rawText = '';
+          try{
+            const out = await worker.recognize(variants[v].url);
+            rawText = (out && out.data && out.data.text) ? out.data.text : '';
+          }catch(e){
+            console.warn('Passe OCR échouée', variants[v].label, pass.psm, e);
+            continue;
+          }
+          if(rawText && rawText.trim() && allText.indexOf(rawText.trim()) < 0) allText += rawText + '\n';
+
+          const cand = parseOcrText(rawText, filename);
+          const score = scoreOcrCandidate(cand, rawText);
+          if(!best || score > best.score) best = { score, cand, rawText };
+
+          if(cand.date && cand.litres > 0 && cand.montant > 0) break outer;
+        }
+      }
+    }
+
+    try{ await worker.terminate(); }catch(e){}
+    worker = null;
+    return { best, allText };
+  }catch(err){
+    if(worker){ try{ await worker.terminate(); }catch(e){} }
+    throw err;
+  }
+}
+
+async function processImageFile(file){
+  const result = { date:'', vehicule:'', carburant:'Gazole professionnel', lieu:'', litres:0, montant:0, km:'', ref:'', note:file.name };
+
+  const progressArea = document.getElementById('ocr-progress-area');
+  const progressId = 'ocr-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+  const setTxt = t => { const el = document.getElementById(`${progressId}-text`); if(el) el.textContent = t; };
+  const setBar = pct => { const el = document.getElementById(`${progressId}-bar`); if(el) el.style.width = Math.max(0, Math.min(100, pct)) + '%'; };
+
+  let worker = null;
+
+  try{
+    if(progressArea){
+      progressArea.insertAdjacentHTML('beforeend', `
+        <div class="ocr-progress" id="${progressId}">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span>📸</span>
+            <strong>${escapeHtml(file.name)}</strong>
+            <span class="ocr-progress-text" id="${progressId}-text">Chargement de l’image…</span>
+          </div>
+          <div class="ocr-progress-bar"><div class="ocr-progress-fill" id="${progressId}-bar" style="width:0%"></div></div>
+        </div>
+      `);
+    }
+
+    // Read the photo as a data URL (more reliable than passing a File to a worker)
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('impossible de lire le fichier image'));
+      reader.readAsDataURL(file);
+    });
+
+    setTxt('Amélioration de l’image…');
+
+    const { best } = await ocrImagesToBest([dataUrl], file.name, setTxt, setBar);
+    const text = best ? best.rawText : '';
+    setBar(100);
+
+    if(!text || !text.trim()){
+      setTxt('⚠️ Aucun texte détecté');
+      showStatus('⚠️ Aucun texte détecté sur la photo. Photographiez le ticket bien à plat, en pleine lumière, sans ombre ni reflet, et cadrez au plus près du texte.', 'warning', 'img-status');
+    } else if(best && !best.cand.date && !(best.cand.litres > 0) && !(best.cand.montant > 0)){
+      setTxt('⚠️ Texte lu, mais aucune donnée reconnue');
+      showStatus('⚠️ Du texte a été lu mais ni la date, ni les litres, ni le montant n’ont pu être identifiés. Complétez la ligne à la main.', 'warning', 'img-status');
+    } else {
+      setTxt('✅ Ticket lu');
+    }
+
+    const parsed = best ? best.cand : parseOcrText('', file.name);
+    parsed.ocrText = (text || '').trim();
+    return parsed;
+
+  }catch(err){
+    console.error('OCR error:', err);
+    if(worker){ try{ await worker.terminate(); }catch(e){} }
+
+    const errMsg = err && err.message ? err.message : String(err);
+    setTxt('❌ Erreur : ' + errMsg);
+    const el = document.getElementById(progressId);
+    if(el) el.style.borderLeft = '3px solid var(--accent-red)';
+    showStatus(`❌ Lecture impossible pour ${file.name} : ${errMsg}`, 'error', 'img-status');
+
+    return result;
+  }
+}
+
+function parseOcrText(text, filename=''){
+  const e = { date:'', vehicule:'', carburant:'Gazole professionnel', lieu:'', litres:0, montant:0, km:'', ref:'', note:filename };
+  if(!text) return e;
+
+  /* ---------- 1. Normalisation du texte OCR ---------- */
+  const raw = String(text)
+    .replace(/\u00A0/g, ' ')
+    .replace(/[|\\{}\[\]_~^*]/g, ' ')
+    .replace(/[\u2010-\u2015]/g, '-')
+    .replace(/[\u20AC]|EUR\b|EURO?S?\b/gi, ' \u20AC ');
+
+  const lines = raw.split(/\r?\n/).map(l => l.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const flat  = lines.join(' | ');
+  const up    = flat.toUpperCase();
+
+  // Corrige les confusions OCR fréquentes dans un contexte numérique
+  const fixNum = s => String(s)
+    .replace(/[oO]/g,'0').replace(/[lI]/g,'1').replace(/[sS]/g,'5')
+    .replace(/[bB]/g,'6').replace(/\s/g,'');
+
+  const toNum = s => {
+    if(s === undefined || s === null) return NaN;
+    let v = fixNum(s).replace(/\.(?=\d{3}\b)/g,'');   // 1.234,56 -> 1234,56
+    v = v.replace(',', '.');
+    const n = parseFloat(v);
+    return isNaN(n) ? NaN : n;
+  };
+
+  /* ---------- 2. Date ---------- */
+  const MOIS = {jan:1,janv:1,fev:2,fév:2,fevr:2,févr:2,mar:3,mars:3,avr:4,mai:5,jui:6,juin:6,juil:7,jul:7,aou:8,aoû:8,aout:8,août:8,sep:9,sept:9,oct:10,nov:11,dec:12,déc:12};
+  const setDate = (y, m, d) => {
+    y = +y; m = +m; d = +d;
+    if(y < 100) y += (y < 70 ? 2000 : 1900);
+    if(m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1990 && y <= 2100){
+      e.date = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      return true;
+    }
+    return false;
+  };
+
+  // Variante « corrigée OCR » : dans un groupe de type date, O/o->0, l/I->1, S->5
+  const D = '[0-9OoIlSsB]';
+  const flatFix = flat.replace(
+    new RegExp(D + '{1,4}[\\/.\\-]' + D + '{1,2}[\\/.\\-]' + D + '{2,4}', 'g'),
+    m => fixNum(m.replace(/[\/.\-]/g, '\u0001')).replace(/\u0001/g, '/')
+  );
+
+  let dm;
+  if((dm = flat.match(/\b(\d{4})-(\d{2})-(\d{2})\b/))) setDate(dm[1], dm[2], dm[3]);
+  if(!e.date && (dm = flatFix.match(/\b(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})\b/))) setDate(dm[3], dm[2], dm[1]);
+  if(!e.date && (dm = flatFix.match(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2})\b/))) setDate(dm[3], dm[2], dm[1]);
+  if(!e.date && (dm = flat.match(/\b(\d{1,2})\s*([A-Za-z\u00C0-\u017F]{3,10})\.?\s*(\d{2,4})\b/))){
+    const key = dm[2].toLowerCase().slice(0,4);
+    const mois = MOIS[key] || MOIS[key.slice(0,3)];
+    if(mois) setDate(dm[3], mois, dm[1]);
+  }
+
+  /* ---------- 3. Type de carburant ---------- */
+  if(/ADBLUE|AD\s?BLUE/.test(up)) e.carburant = 'AdBlue';
+  else if(/GNR|NON[ .-]?ROUTIER/.test(up)) e.carburant = 'Gazole non routier (GNR)';
+  else if(/E\s?85|SUPERETHANOL|SUPER\u00c9THANOL/.test(up)) e.carburant = 'Superéthanol E85';
+  else if(/GAZOLE|GASOIL|DIESEL|GAZOIL|\bDSL\b|EXCELLIUM|B7\b/.test(up)) e.carburant = 'Gazole professionnel';
+  else if(/SP\s?95|SP\s?98|E\s?10|ESSENCE|SANS\s?PLOMB|\bSP\b/.test(up)) e.carburant = 'Essence';
+
+  /* ---------- 4. Station / lieu ---------- */
+  const STATIONS = ['TOTALENERGIES','TOTAL ACCESS','TOTAL','ESSO EXPRESS','ESSO','SHELL','AVIA','AGIP','ENI','BP ','ELF','AS 24','AS24','DKV','UTA','OMV','REPSOL','ARAL','\u00c9LAN','ELAN','CARREFOUR','AUCHAN','LECLERC','INTERMARCHE','INTERMARCHÉ','SUPER U','SYSTEME U','SYSTÈME U','CASINO','CORA','MIGROS','JET','TANKSTELLE'];
+  const headUp = lines.slice(0, 6).join(' | ').toUpperCase();
+  let bestStation = null;
+  for(const s of STATIONS){
+    const key = s.trim();
+    let idx = -1;
+    const re = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    let mm;
+    while((mm = re.exec(headUp)) !== null){
+      const after = headUp.slice(mm.index + key.length, mm.index + key.length + 14);
+      // « TOTAL » suivi d'un mot de paiement = ligne de total, pas une enseigne
+      if(/^(ENERGIES)/.test(after)) { idx = mm.index; break; }
+      if(key === 'TOTAL' && /^(\s*(A|\u00c0)\s*PAYER|\s*TTC|\s*HT|\s*[:=]?\s*\d|\s*\u20AC|\s*NET)/.test(after)) continue;
+      idx = mm.index; break;
+    }
+    if(idx >= 0 && (!bestStation || idx < bestStation.idx)){
+      bestStation = { idx, label: key.charAt(0) + key.slice(1).toLowerCase() };
+    }
+  }
+  if(bestStation) e.lieu = bestStation.label;
+
+  /* ---------- 5. Immatriculation ---------- */
+  let im = flat.match(/\b([A-Z]{2})[\s-]?(\d{3})[\s-]?([A-Z]{2})\b/);
+  if(im) e.vehicule = `${im[1]}-${im[2]}-${im[3]}`.toUpperCase();
+  if(!e.vehicule && (im = flat.match(/\b(\d{1,4})\s?([A-Z]{2,3})\s?(\d{2})\b/))){
+    e.vehicule = `${im[1]} ${im[2]} ${im[3]}`.toUpperCase();
+  }
+  if(!e.vehicule && (im = flat.match(/(?:immat(?:riculation)?|plaque|v\u00e9hicule|vehicule)\s*[:#]?\s*([A-Z0-9 -]{6,12})/i))){
+    e.vehicule = im[1].trim().replace(/\s+/g,'-').toUpperCase();
+  }
+
+  /* ---------- 6. Collecte des nombres avec leur contexte ---------- */
+  const NUM = /(\d{1,4}(?:[.,\s]\d{3})*(?:[.,]\d{1,3})?)/g;
+  const cands = [];
+  lines.forEach((line, li) => {
+    let m;
+    const re = new RegExp(NUM.source, 'g');
+    while((m = re.exec(line)) !== null){
+      const val = toNum(m[1]);
+      if(isNaN(val) || val <= 0) return;
+      const before = line.slice(Math.max(0, m.index - 22), m.index).toUpperCase();
+      const after  = line.slice(m.index + m[1].length, m.index + m[1].length + 12).toUpperCase();
+      const decs   = (m[1].match(/[.,](\d{1,3})$/) || [,''])[1].length;
+      cands.push({ val, decs, before, after, line: line.toUpperCase(), li });
+    }
+  });
+
+  const isPlausiblePrice  = v => v >= 0.4 && v <= 4.5;
+  const isPlausibleLitres = v => v >= 1 && v <= 3000;
+  const isPlausibleTotal  = v => v >= 1 && v <= 20000;
+
+  /* ---------- 7. Prix unitaire (€/L) ---------- */
+  let prix = 0;
+  for(const c of cands){
+    const ctx = c.before + ' ' + c.after;
+    const unitTag = /\u20AC\s*\/?\s*L|\/\s*L\b|EUR\s*\/\s*L|PRIX|P\.U|PU\b|UNIT/.test(ctx);
+    if(unitTag && isPlausiblePrice(c.val)){ prix = c.val; break; }
+  }
+  if(!prix){
+    // Un nombre a 3 decimales entre 0,4 et 4,5 est presque toujours un prix au litre
+    const c = cands.find(x => x.decs === 3 && isPlausiblePrice(x.val));
+    if(c) prix = c.val;
+  }
+
+  /* ---------- 8. Litres ---------- */
+  const litreTagged = cands.filter(c =>
+    (/\bL\b|\bLTR?\b|LITRES?|LTS?\b/.test(c.after) || /VOLUME|LITRES?|QUANTIT|QTE|QT\u00c9/.test(c.before))
+    && isPlausibleLitres(c.val) && !isPlausiblePrice(c.val)
+  );
+  if(litreTagged.length) e.litres = litreTagged[0].val;
+
+  /* ---------- 9. Montant total ---------- */
+  const totalRe = /TOTAL|MONTANT|NET\s*A?\s*PAYER|A\s*PAYER|\u00c0\s*PAYER|SOMME|TTC|CB\b|CARTE|R\u00c8GLEMENT|REGLEMENT|ESP\u00c8CES|ESPECES/;
+  const totalTagged = cands.filter(c =>
+    (totalRe.test(c.before) || totalRe.test(c.line)) && isPlausibleTotal(c.val) && c.decs === 2
+  );
+  if(totalTagged.length){
+    e.montant = Math.max(...totalTagged.map(c => c.val));
+  } else {
+    const euroTagged = cands.filter(c => /\u20AC/.test(c.after) && c.decs === 2 && isPlausibleTotal(c.val) && !isPlausiblePrice(c.val));
+    if(euroTagged.length) e.montant = Math.max(...euroTagged.map(c => c.val));
+  }
+
+  /* ---------- 10. Recoupement montant = litres x prix ---------- */
+  const near = (a, b, tol) => Math.abs(a - b) <= tol;
+
+  if(prix > 0 && e.litres > 0 && e.montant > 0){
+    // Verifie la coherence ; sinon on fait confiance a prix x litres
+    if(!near(e.litres * prix, e.montant, Math.max(0.6, e.montant * 0.06))){
+      const litresDeduits = e.montant / prix;
+      const montantDeduit = e.litres * prix;
+      const altL = cands.find(c => isPlausibleLitres(c.val) && near(c.val, litresDeduits, 0.6));
+      const altM = cands.find(c => c.decs === 2 && near(c.val, montantDeduit, 0.6));
+      if(altM) e.montant = altM.val;
+      else if(altL) e.litres = altL.val;
+      else e.litres = Math.round(litresDeduits * 100) / 100;
+    }
+  } else if(prix > 0 && e.montant > 0 && !e.litres){
+    e.litres = Math.round((e.montant / prix) * 100) / 100;
+  } else if(prix > 0 && e.litres > 0 && !e.montant){
+    e.montant = Math.round(e.litres * prix * 100) / 100;
+  }
+
+  /* ---------- 11. Derniers recours ---------- */
+  if(!e.montant || !e.litres){
+    // Cherche un couple (litres, montant) coherent avec un prix carburant realiste
+    const pool = cands.filter(c => c.val > 0.5 && c.val < 20000);
+    let best = null;
+    for(const a of pool){
+      for(const b of pool){
+        if(a === b) continue;
+        if(!isPlausibleLitres(a.val) || !isPlausibleTotal(b.val)) continue;
+        if(b.decs !== 2) continue;
+        const p = b.val / a.val;
+        if(p < 0.9 || p > 3.2) continue;
+        const score = (a.val >= 5 ? 1 : 0) + (b.val > a.val ? 1 : 0);
+        if(!best || score > best.score || (score === best.score && b.val > best.b.val)) best = { a, b, score };
+      }
+    }
+    if(best){
+      if(!e.litres)  e.litres  = best.a.val;
+      if(!e.montant) e.montant = best.b.val;
+    }
+  }
+  if(!e.montant){
+    const twoDec = cands.filter(c => c.decs === 2 && isPlausibleTotal(c.val) && !isPlausiblePrice(c.val));
+    if(twoDec.length) e.montant = Math.max(...twoDec.map(c => c.val));
+  }
+
+  /* ---------- 12. Reference et kilometrage ---------- */
+  const rM = flat.match(/(?:n[\u00B0o]|facture|ticket|re\u00e7u|recu|r\u00e9f|ref|beleg)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-\/]{3,})/i);
+  if(rM) e.ref = rM[1];
+
+  /* On accepte les compteurs ecrits avec separateur de milliers : "98 450 km", "152.340", "98'450" */
+  const KMNUM = "(\\d{1,3}(?:[ .'\\u00A0\\u202F]\\d{3})+|\\d{2,7})";
+  const kmM = flat.match(new RegExp("(?:km|kms|kilom\\u00e9trage|kilometrage|compteur|odo(?:m\\u00e8tre|metre)?)\\s*[:#]?\\s*" + KMNUM, "i"))
+           || flat.match(new RegExp(KMNUM + "\\s*(?:km|kms)\\b", "i"));
+  if(kmM){
+    const k = parseInt(String(kmM[1]).replace(/[ .'\u00A0\u202F]/g, ""), 10);
+    if(k > 0 && k < 3000000) e.km = k;
+  }
+
+  /* ---------- 13. Garde-fous ---------- */
+  if(e.litres && (e.litres <= 0 || e.litres > 5000)) e.litres = 0;
+  if(e.montant && (e.montant <= 0 || e.montant > 50000)) e.montant = 0;
+  e.litres  = e.litres  ? Math.round(e.litres  * 100) / 100 : 0;
+  e.montant = e.montant ? Math.round(e.montant * 100) / 100 : 0;
+
+  return e;
+}
+
+/* ===== UTILITY ===== */
+function isComplete(t){return t.date && t.vehicule && t.litres > 0 && t.montant > 0}
+function periodKey(dateStr){const d=new Date(dateStr);if(isNaN(d.getTime()))return'';return periodMode==='mois'?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`:`${d.getFullYear()}-T${Math.floor(d.getMonth()/3)+1}`}
+function periodLabel(dateStr){const d=new Date(dateStr);if(isNaN(d.getTime()))return'';if(periodMode==='mois'){const l=d.toLocaleDateString('fr-FR',{month:'short',year:'numeric'});return l.charAt(0).toUpperCase()+l.slice(1)}return`T${Math.floor(d.getMonth()/3)+1} ${d.getFullYear()}`}
+function remboursementOf(e){return Math.max(0,Number(e.litres||0)*(rates[e.carburant]||0))}
+function chipClass(c){if(c==='Gazole professionnel')return'tag tag-gazole';if(c.includes('GNR'))return'tag tag-gnr';if(c.includes('Essence')||c.includes('E85'))return'tag tag-essence';if(c==='AdBlue')return'tag tag-adblue';return'tag tag-other'}
+
+function showStatus(msg,type='info',targetId='pdf-status'){const s=document.getElementById(targetId);if(!s)return;s.className=`status-box ${type}`;s.textContent=msg}
+function showModal(msg,options={}){return new Promise(res=>{const o=document.getElementById('modal-overlay');document.getElementById('modal-message').textContent=msg;document.getElementById('modal-ok').textContent=options.ok||'OK';document.getElementById('modal-cancel').style.display=options.cancel?'':'none';o.classList.add('open');const ok=document.getElementById('modal-ok'),cl=document.getElementById('modal-cancel');ok.onclick=()=>{o.classList.remove('open');res(!0)};cl.onclick=()=>{o.classList.remove('open');res(!1)}})}
+
+function saveStorage(key,value){try{localStorage.setItem(key,JSON.stringify(value));return!0}catch(e){return!1}}
+function loadStorage(key,def=null){try{const d=localStorage.getItem(key);return d?JSON.parse(d):def}catch{return def}}
+
+/* ===== CODE D'ACCÈS (écran de verrouillage) ===== */
+const CODE_KEY='carnet_code_hash_v1';
+const CODE_SALT='carnet-carburant-v4|';
+/* Code par défaut : TICPE2026 (empreinte SHA-256 salée, le code n'est jamais stocké en clair) */
+const DEFAULT_CODE_HASH='cdeeb336b75fabd9230e8f9994aca4be5f9aef8cc13f0100c0b5883d7ca005a2';
+
+async function hashCode(code){
+  const data=new TextEncoder().encode(CODE_SALT+code);
+  if(window.crypto&&window.crypto.subtle){
+    const buf=await window.crypto.subtle.digest('SHA-256',data);
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  /* Repli simple si l'API de chiffrement n'est pas disponible (ancien navigateur / http) */
+  let h1=0x811c9dc5,h2=0x01000193;
+  for(let i=0;i<data.length;i++){h1=(h1^data[i])*16777619>>>0;h2=(h2+data[i]*(i+7))>>>0}
+  return 'fnv'+h1.toString(16)+h2.toString(16);
+}
+function currentCodeHash(){return loadStorage(CODE_KEY,DEFAULT_CODE_HASH)}
+function isUnlocked(){try{return sessionStorage.getItem('carnet_unlocked')==='1'}catch{return!1}}
+function markUnlocked(v){try{v?sessionStorage.setItem('carnet_unlocked','1'):sessionStorage.removeItem('carnet_unlocked')}catch{}}
+function openApp(){
+  markUnlocked(!0);
+  document.getElementById('gate').classList.add('hidden');
+  const app=document.getElementById('app');
+  app.style.display='';
+  if(!window.__carnetStarted){window.__carnetStarted=!0;init()}
+}
+function lockApp(){
+  markUnlocked(!1);
+  document.getElementById('app').style.display='none';
+  const g=document.getElementById('gate');
+  g.classList.remove('hidden');
+  document.getElementById('gate-error').classList.remove('show');
+  const i=document.getElementById('gate-input');
+  i.value='';i.focus();
+}
+function setupGate(){
+  const form=document.getElementById('gate-form'),input=document.getElementById('gate-input'),err=document.getElementById('gate-error'),btn=document.getElementById('gate-submit');
+  form.addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    const code=input.value;
+    if(!code){err.textContent='Veuillez saisir votre code d’accès.';err.classList.add('show');return}
+    btn.disabled=!0;
+    const h=await hashCode(code);
+    btn.disabled=!1;
+    if(h===currentCodeHash()){err.classList.remove('show');input.value='';openApp()}
+    else{err.textContent='Code incorrect. Réessayez.';err.classList.add('show');input.value='';input.focus()}
+  });
+  input.addEventListener('input',()=>err.classList.remove('show'));
+  if(isUnlocked())openApp();else input.focus();
+}
+async function saveNewCode(){
+  const oldI=document.getElementById('code-old'),n1=document.getElementById('code-new'),n2=document.getElementById('code-new2'),st=document.getElementById('code-status');
+  const show=(cls,msg)=>{st.className='status-box '+cls;st.textContent=msg};
+  const oldH=await hashCode(oldI.value);
+  if(oldH!==currentCodeHash()){show('error','Le code actuel est incorrect.');return}
+  if(n1.value.length<4){show('error','Le nouveau code doit contenir au moins 4 caractères.');return}
+  if(n1.value!==n2.value){show('error','Les deux nouveaux codes ne sont pas identiques.');return}
+  const ok=saveStorage(CODE_KEY,await hashCode(n1.value));
+  if(!ok){show('error','Impossible d’enregistrer le code dans ce navigateur.');return}
+  oldI.value='';n1.value='';n2.value='';
+  show('success','Nouveau code enregistré. Il sera demandé à la prochaine ouverture.');
+}
+
+/* ===== THEME ===== */
+function initTheme(){const t=loadStorage(STORAGE_KEYS.theme,'light');document.documentElement.setAttribute('data-theme',t)}
+function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme');const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);saveStorage(STORAGE_KEYS.theme,next)}
+
+/* ===== RATES ===== */
+function renderRateInputs(){document.getElementById('rate-grid').innerHTML=CARBURANTS.map(c=>`<div class="field"><label>${c} (€/L)</label><input type="number" step="0.0001" min="0" data-carb="${c}" class="rate-input" value="${rates[c]}"></div>`).join('')}
+function saveRates(){document.querySelectorAll('.rate-input').forEach(i=>rates[i.dataset.carb]=parseFloat(i.value)||0);saveStorage(STORAGE_KEYS.rates,rates);document.getElementById('rate-panel').classList.remove('open');render()}
+
+/* ===== PDF IMPORT FLOW ===== */
+function renderPreviewList(){
+  const c=document.getElementById('preview-list');
+  c.innerHTML=pendingTickets.map((t,idx)=>{
+    const dup=findFuzzyDuplicate(t)>=0;
+    const comp=isComplete(t);
+    let cls='ticket-preview';
+    if(dup)cls+=' duplicate'; else if(!comp)cls+=' incomplete';
+    return `<div class="${cls}" data-idx="${idx}">
+      <h4><span>📄 ${escapeHtml(t.note || 'Ticket '+(idx+1))}</span><span>${dup?'⚠️ DOUBLON':comp?'✅ Complet':'⚠️ À compléter'}</span></h4>
+      <div class="fields">
+        <div class="field"><label>Date *</label><input type="date" class="p-date" value="${escapeHtml(t.date)}" data-idx="${idx}"></div>
+        <div class="field"><label>Véhicule *</label><input type="text" class="p-vehicule" value="${escapeHtml(t.vehicule)}" placeholder="AB-123-CD" data-idx="${idx}"></div>
+        <div class="field"><label>Carburant</label><select class="p-carb" data-idx="${idx}">${CARBURANTS.map(cc=>`<option ${t.carburant===cc?'selected':''}>${cc}</option>`).join('')}</select></div>
+        <div class="field"><label>Lieu</label><input type="text" class="p-lieu" value="${escapeHtml(t.lieu)}" data-idx="${idx}"></div>
+        <div class="field"><label>Litres *</label><input type="number" step="0.01" class="p-litres" value="${t.litres||''}" data-idx="${idx}"></div>
+        <div class="field"><label>Montant € *</label><input type="number" step="0.01" class="p-montant" value="${t.montant||''}" data-idx="${idx}"></div>
+        <div class="field"><label>Km</label><input type="number" step="1" class="p-km" value="${t.km||''}" data-idx="${idx}"></div>
+        <div class="field"><label>Réf.</label><input type="text" class="p-ref" value="${escapeHtml(t.ref)}" data-idx="${idx}"></div>
+      </div>
+      ${t.ocrText ? `<details style="margin-top:8px;"><summary style="cursor:pointer;font-size:12px;color:var(--text-muted);">🔍 Voir le texte lu dans le PDF</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:180px;overflow:auto;margin-top:6px;">${escapeHtml(t.ocrText)}</pre></details>` : ''}
+    </div>`}).join('');
+  
+  document.querySelectorAll('.ticket-preview input, .ticket-preview select').forEach(inp=>{
+    inp.oninput=()=>{
+      const idx=parseInt(inp.dataset.idx);
+      const t=pendingTickets[idx];
+      if(inp.classList.contains('p-date'))t.date=inp.value;
+      else if(inp.classList.contains('p-vehicule'))t.vehicule=inp.value;
+      else if(inp.classList.contains('p-carb'))t.carburant=inp.value;
+      else if(inp.classList.contains('p-lieu'))t.lieu=inp.value;
+      else if(inp.classList.contains('p-litres'))t.litres=parseFloat(inp.value)||0;
+      else if(inp.classList.contains('p-montant'))t.montant=parseFloat(inp.value)||0;
+      else if(inp.classList.contains('p-km'))t.km=parseInt(inp.value)||'';
+      else if(inp.classList.contains('p-ref'))t.ref=inp.value;
+      // Don't re-render on every keystroke, just update the header status
+    };
+  });
+}
+
+async function handlePdfFiles(files){
+  pendingTickets=[];
+  document.getElementById('preview-list').innerHTML='';
+  const area = document.getElementById('pdf-progress-area');
+  if(area) area.innerHTML='';
+  document.getElementById('btn-import-all').style.display='none';
+
+  let totalExtracted = 0;
+  const problemes = [];
+  let ocrUtilise = false;
+
+  for(let fi = 0; fi < files.length; fi++){
+    const f = files[fi];
+    const id = 'pdfp-' + Date.now() + '-' + fi;
+    if(area){
+      area.insertAdjacentHTML('beforeend', `
+        <div class="ocr-progress" id="${id}">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span>📄</span><strong>${escapeHtml(f.name)}</strong>
+            <span class="ocr-progress-text" id="${id}-text">Lecture du PDF…</span>
+          </div>
+          <div class="ocr-progress-bar"><div class="ocr-progress-fill" id="${id}-bar" style="width:0%"></div></div>
+        </div>`);
+    }
+    const setTxt = t => { const el=document.getElementById(`${id}-text`); if(el) el.textContent=t; };
+    const setBar = p => { const el=document.getElementById(`${id}-bar`); if(el) el.style.width=p+'%'; };
+
+    setTxt('Lecture du PDF…');
+    const res = await readPdfFile(f);
+
+    if(res.error && !res.doc){
+      setTxt('❌ ' + res.error);
+      problemes.push(`${f.name} : ${res.error}`);
+      continue;
+    }
+
+    let tickets = res.tickets || [];
+    // Un relevé UTA contient du texte sélectionnable. Un ticket scanné (photo
+    // enregistrée en PDF) n'en contient aucun : on passe alors par l'OCR.
+    const texteInsuffisant = (res.textLen || 0) < 40;
+    if(tickets.length === 0 || texteInsuffisant){
+      if(!res.doc){
+        problemes.push(`${f.name} : PDF illisible.`);
+        setTxt('❌ PDF illisible');
+        continue;
+      }
+      try{
+        setTxt(texteInsuffisant
+          ? 'PDF scanné détecté (aucun texte) — lecture par OCR…'
+          : 'Aucun ticket reconnu — nouvelle tentative par OCR…');
+        ocrUtilise = true;
+        const images = await renderPdfPagesToImages(res.doc, 5, setTxt);
+        const { best, allText } = await ocrImagesToBest(images, f.name, setTxt, setBar);
+
+        // 1) Si le texte ressemble à un relevé (plusieurs lignes de tickets),
+        //    on utilise le lecteur de relevé. Sinon c'est un ticket unique et
+        //    on garde la lecture « ticket de caisse », bien plus fiable.
+        let viaOcr = [];
+        const ressembleReleve = /UNION\s*TANK|\bUTA\b|Edenred|Relev[éee]\s+des\s+enl[èee]vements/i.test(allText || '');
+        if(ressembleReleve && allText && allText.trim()){
+          try{ viaOcr = parseUtaPdfText(allText, f.name, allText.split('\n')) || []; }catch(e){ viaOcr = []; }
+          viaOcr = viaOcr.filter(t => t && (t.date || t.litres > 0 || t.montant > 0));
+        }
+        // 2) Ticket unique lu comme une photo
+        if(viaOcr.length === 0 && best && (best.cand.date || best.cand.litres > 0 || best.cand.montant > 0)){
+          const t = best.cand;
+          t.ocrText = (allText || best.rawText || '').trim();
+          viaOcr = [t];
+        }
+
+        setBar(100);
+        if(viaOcr.length){
+          tickets = viaOcr;
+          setTxt(`✅ ${viaOcr.length} ticket(s) lu(s) par OCR`);
+        }else if(allText && allText.trim()){
+          setTxt('⚠️ Texte lu, mais aucune donnée reconnue');
+          problemes.push(`${f.name} : du texte a été lu mais ni la date, ni les litres, ni le montant n’ont pu être identifiés.`);
+        }else{
+          setTxt('⚠️ Aucun texte détecté');
+          problemes.push(`${f.name} : aucun texte détecté. Le scan est peut-être trop sombre ou trop petit — essayez une photo du ticket dans l’onglet « Photo ticket ».`);
+        }
+      }catch(err){
+        const msg = (err && err.message) ? err.message : String(err);
+        setTxt('❌ ' + msg);
+        problemes.push(`${f.name} : ${msg}`);
+      }
+    }else{
+      setBar(100);
+      setTxt(`✅ ${tickets.length} ticket(s) trouvé(s) dans le texte du PDF`);
+    }
+
+    pendingTickets.push(...tickets);
+    totalExtracted += tickets.length;
+  }
+
+  // Immatriculation par défaut : les tickets de caisse ne l'indiquent presque jamais
+  const immatDef = (document.getElementById('pdf-default-immat')?.value || '').trim().toUpperCase();
+  if(immatDef) pendingTickets.forEach(t => { if(!t.vehicule) t.vehicule = immatDef; });
+
+  renderPreviewList();
+  if(pendingTickets.length) document.getElementById('btn-import-all').style.display='inline-flex';
+
+  const ok = pendingTickets.filter(isComplete).length;
+  const part = pendingTickets.length - ok;
+
+  if(totalExtracted === 0){
+    let msg = `❌ Aucun ticket n’a pu être extrait de ${files.length} PDF.`;
+    if(problemes.length) msg += ' ' + problemes.join(' ');
+    else msg += ' Vérifiez que le fichier contient bien un ticket ou un relevé de carburant.';
+    showStatus(msg, 'error');
+  }else{
+    let msg = `${totalExtracted} ticket(s) extrait(s) de ${files.length} PDF`;
+    if(ocrUtilise) msg += ' (dont lecture OCR d’un PDF scanné)';
+    msg += `. ✅ ${ok} complet(s), ⚠️ ${part} à compléter.`;
+    if(problemes.length) msg += ' — ' + problemes.join(' ');
+    showStatus(msg, ok > 0 ? 'success' : 'warning');
+  }
+}
+
+function importAllTickets(){
+  let ajout=0, double=0, manque=0;
+  for(const t of pendingTickets){
+    if(!t.date||!t.vehicule||!t.litres||!t.montant){manque++;continue}
+    if(findFuzzyDuplicate(t)>=0){double++;continue}
+    t.id=genId();
+    entries.push(t);
+    ajout++;
+  }
+  saveStorage(STORAGE_KEYS.entries,entries);
+  closeImportPanel();
+  render();
+  showStatus(`✅ ${ajout} ticket(s) importé(s). ⚠️ ${double} doublon(s) ignoré(s). ❌ ${manque} incomplet(s).`,'success','pdf-status');
+}
+
+/* ===== IMAGE IMPORT FLOW ===== */
+function renderImgPreviewList(){
+  const c=document.getElementById('img-preview-list');
+  c.innerHTML=pendingImgTickets.map((t,idx)=>{
+    const dup=findFuzzyDuplicate(t)>=0;
+    const comp=isComplete(t);
+    let cls='ticket-preview';
+    if(dup)cls+=' duplicate'; else if(!comp)cls+=' incomplete';
+    return `<div class="${cls}" data-idx="${idx}">
+      <h4><span>📸 ${escapeHtml(t.note || 'Photo '+(idx+1))}</span><span>${dup?'⚠️ DOUBLON':comp?'✅ Complet':'⚠️ À compléter'}</span></h4>
+      <div class="fields">
+        <div class="field"><label>Date *</label><input type="date" class="pi-date" value="${escapeHtml(t.date)}" data-idx="${idx}"></div>
+        <div class="field"><label>Véhicule *</label><input type="text" class="pi-vehicule" value="${escapeHtml(t.vehicule)}" placeholder="AB-123-CD" data-idx="${idx}"></div>
+        <div class="field"><label>Carburant</label><select class="pi-carb" data-idx="${idx}">${CARBURANTS.map(cc=>`<option ${t.carburant===cc?'selected':''}>${cc}</option>`).join('')}</select></div>
+        <div class="field"><label>Lieu</label><input type="text" class="pi-lieu" value="${escapeHtml(t.lieu)}" data-idx="${idx}"></div>
+        <div class="field"><label>Litres *</label><input type="number" step="0.01" class="pi-litres" value="${t.litres||''}" data-idx="${idx}"></div>
+        <div class="field"><label>Montant € *</label><input type="number" step="0.01" class="pi-montant" value="${t.montant||''}" data-idx="${idx}"></div>
+        <div class="field"><label>Km</label><input type="number" step="1" class="pi-km" value="${t.km||''}" data-idx="${idx}"></div>
+        <div class="field"><label>Réf.</label><input type="text" class="pi-ref" value="${escapeHtml(t.ref)}" data-idx="${idx}"></div>
+      </div>
+      ${t.ocrText ? `<details style="margin-top:8px;"><summary style="cursor:pointer;font-size:12px;color:var(--text-muted);">🔍 Voir le texte lu sur la photo</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:180px;overflow:auto;margin-top:6px;">${escapeHtml(t.ocrText)}</pre></details>` : ''}
+    </div>`}).join('');
+  
+  document.querySelectorAll('#img-preview-list .ticket-preview input, #img-preview-list .ticket-preview select').forEach(inp=>{
+    inp.oninput=()=>{
+      const idx=parseInt(inp.dataset.idx);
+      const t=pendingImgTickets[idx];
+      if(inp.classList.contains('pi-date'))t.date=inp.value;
+      else if(inp.classList.contains('pi-vehicule'))t.vehicule=inp.value;
+      else if(inp.classList.contains('pi-carb'))t.carburant=inp.value;
+      else if(inp.classList.contains('pi-lieu'))t.lieu=inp.value;
+      else if(inp.classList.contains('pi-litres'))t.litres=parseFloat(inp.value)||0;
+      else if(inp.classList.contains('pi-montant'))t.montant=parseFloat(inp.value)||0;
+      else if(inp.classList.contains('pi-km'))t.km=parseInt(inp.value)||'';
+      else if(inp.classList.contains('pi-ref'))t.ref=inp.value;
+    };
+  });
+}
+
+/* ===== AUTODIAGNOSTIC DU LECTEUR DE TICKETS ===== */
+// Builds a synthetic “receipt” in a canvas and runs the whole OCR chain on it.
+// If this test fails, the problem is the engine/network, not the user's photo.
+async function runOcrDiagnostic(){
+  const area = document.getElementById('ocr-progress-area');
+  const id = 'diag-' + Date.now();
+  if(area){
+    area.insertAdjacentHTML('beforeend', `
+      <div class="ocr-progress" id="${id}">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span>🩺</span><strong>Test du lecteur</strong>
+          <span class="ocr-progress-text" id="${id}-text">Démarrage du test…</span>
+        </div>
+        <div class="ocr-progress-bar"><div class="ocr-progress-fill" id="${id}-bar" style="width:0%"></div></div>
+      </div>
+    `);
+  }
+  const setTxt = t => { const el = document.getElementById(`${id}-text`); if(el) el.textContent = t; };
+  const setBar = p => { const el = document.getElementById(`${id}-bar`); if(el) el.style.width = p + '%'; };
+
+  let worker = null;
+  try{
+    if(location.protocol === 'file:'){
+      setTxt('⚠️ Page ouverte depuis le disque — tentative quand même…');
+    }
+
+    // Ticket de test dessiné dans un canvas
+    const cv = document.createElement('canvas');
+    cv.width = 900; cv.height = 420;
+    const cx = cv.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+    cx.fillStyle = '#000';
+    const rows = ['TOTALENERGIES', '12/03/2025 14:32', 'GAZOLE PRO', '45,67 L x 1,689 EUR/L', 'TOTAL A PAYER 77,13 EUR'];
+    rows.forEach((t, i) => { cx.font = 'bold 42px monospace'; cx.fillText(t, 40, 70 + i * 70); });
+    const testUrl = cv.toDataURL('image/png');
+
+    const cdn = await ensureTesseract(setTxt);
+    setTxt(`Moteur téléchargé (${cdn.name}) — initialisation…`);
+
+    worker = await createOcrWorker(cdn, m => {
+      if(m && typeof m.progress === 'number') setBar(Math.round(m.progress * 100));
+      if(m && m.status) setTxt('Test : ' + m.status);
+    });
+
+    setTxt('Test : lecture du ticket témoin…');
+    const out = await worker.recognize(testUrl);
+    const txt = (out && out.data && out.data.text) ? out.data.text : '';
+    try{ await worker.terminate(); }catch(e){}
+    worker = null;
+    setBar(100);
+
+    const parsed = parseOcrText(txt, 'test.png');
+    const ok = !!parsed.date && parsed.litres > 0 && parsed.montant > 0;
+    const el = document.getElementById(id);
+
+    if(ok){
+      setTxt('✅ Le lecteur fonctionne');
+      showStatus('✅ Le lecteur de tickets fonctionne (date, litres et montant reconnus sur le ticket témoin). Si vos photos ne donnent rien, c’est la qualité de la photo : cadrez le ticket bien à plat, plein cadre, en pleine lumière, sans ombre ni reflet.', 'success', 'img-status');
+    } else if(txt.trim()){
+      setTxt('⚠️ Moteur OK, extraction partielle');
+      if(el) el.style.borderLeft = '3px solid var(--accent-amber, #f59e0b)';
+      showStatus('⚠️ Le moteur lit du texte mais n’a pas retrouvé toutes les valeurs du ticket témoin. Texte lu : ' + txt.replace(/\s+/g, ' ').slice(0, 200), 'warning', 'img-status');
+    } else {
+      setTxt('❌ Moteur chargé mais aucun texte lu');
+      if(el) el.style.borderLeft = '3px solid var(--accent-red)';
+      showStatus('❌ Le moteur démarre mais ne renvoie aucun texte. Les données de langue sont probablement bloquées par le réseau (pare-feu / proxy d’entreprise). Essayez un autre réseau ou le partage de connexion du téléphone.', 'error', 'img-status');
+    }
+  }catch(err){
+    if(worker){ try{ await worker.terminate(); }catch(e){} }
+    const msg = err && err.message ? err.message : String(err);
+    setTxt('❌ Échec : ' + msg);
+    const el = document.getElementById(id);
+    if(el) el.style.borderLeft = '3px solid var(--accent-red)';
+    showStatus('❌ Le lecteur de tickets n’a pas pu démarrer : ' + msg, 'error', 'img-status');
+  }
+}
+
+async function handleImageFiles(files){
+  pendingImgTickets=[];
+  const immatEl = document.getElementById('img-default-immat');
+  const defImmat = immatEl ? immatEl.value.trim().toUpperCase() : '';
+  if(defImmat) saveStorage('carnet_default_immat', defImmat);
+  document.getElementById('img-preview-list').innerHTML='';
+  document.getElementById('ocr-progress-area').innerHTML='';
+  
+  for(const f of files){
+    const t = await processImageFile(f);
+    if(!t.vehicule && defImmat) t.vehicule = defImmat;
+    pendingImgTickets.push(t);
+  }
+  
+  renderImgPreviewList();
+  if(pendingImgTickets.length) document.getElementById('btn-import-img-all').style.display='inline-flex';
+  
+  const ok = pendingImgTickets.filter(isComplete).length;
+  const part = pendingImgTickets.length - ok;
+  showStatus(`${pendingImgTickets.length} photo(s) analysée(s). ✅ ${ok} complet(s), ⚠️ ${part} à compléter.`, ok > 0 ? 'success' : 'warning', 'img-status');
+}
+
+function importAllImgTickets(){
+  let ajout=0, double=0, manque=0;
+  for(const t of pendingImgTickets){
+    if(!t.date||!t.vehicule||!t.litres||!t.montant){manque++;continue}
+    if(findFuzzyDuplicate(t)>=0){double++;continue}
+    t.id=genId();
+    delete t.ocrText;   // ne pas stocker le texte OCR brut
+    entries.push(t);
+    ajout++;
+  }
+  saveStorage(STORAGE_KEYS.entries,entries);
+  closeImportPanel();
+  render();
+  showStatus(`✅ ${ajout} ticket(s) importé(s). ⚠️ ${double} doublon(s) ignoré(s). ❌ ${manque} incomplet(s).`,'success','img-status');
+}
+
+/* ===== CLOSE PANELS ===== */
+function closeImportPanel(){
+  document.getElementById('import-panel').classList.remove('open');
+  pendingTickets=[];
+  pendingImgTickets=[];
+  document.getElementById('preview-list').innerHTML='';
+  document.getElementById('img-preview-list').innerHTML='';
+  document.getElementById('ocr-progress-area').innerHTML='';
+  const pa = document.getElementById('pdf-progress-area'); if(pa) pa.innerHTML='';
+  document.getElementById('btn-import-all').style.display='none';
+  document.getElementById('btn-import-img-all').style.display='none';
+  showStatus('Sélectionnez vos fichiers PDF…','info','pdf-status');
+  showStatus('Prenez en photo vos tickets de caisse…','info','img-status');
+}
+
+/* ===== DUPLICATE PANEL ===== */
+function renderDedupPanel(){
+  dedupGroups = buildDuplicateGroups();
+  dedupRemoveIds = new Set();
+  
+  const content = document.getElementById('dedup-content');
+  
+  if(dedupGroups.length === 0){
+    content.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);"><div style="font-size:48px;margin-bottom:12px;">✅</div><div style="font-size:18px;font-weight:700;">Aucun doublon détecté</div><div style="font-size:14px;margin-top:4px;">Tous vos tickets sont uniques.</div></div>';
+    document.getElementById('btn-dedup-delete').style.display = 'none';
+    return;
+  }
+  
+  document.getElementById('btn-dedup-delete').style.display = 'inline-flex';
+  
+  // By default, keep the first (oldest) and mark rest for removal
+  dedupGroups.forEach(group => {
+    // Sort by id (which includes timestamp) — keep the first added
+    group.sort((a,b) => (a.id||'').localeCompare(b.id||''));
+    group.slice(1).forEach(e => dedupRemoveIds.add(e.id));
+  });
+  
+  content.innerHTML = dedupGroups.map((group, gi) => {
+    const kept = group[0];
+    const removed = group.slice(1);
+    return `<div class="dedup-group">
+      <div class="dedup-group-header">
+        <span><strong>Doublon #${gi+1}</strong> — ${escapeHtml(sanitize(kept.vehicule)) || 'Véhicule inconnu'} le ${kept.date ? new Date(kept.date).toLocaleDateString('fr-FR') : '?'}</span>
+        <span class="badge">${group.length} tickets</span>
+      </div>
+      ${group.map((e, i) => {
+        const isRemoved = dedupRemoveIds.has(e.id);
+        return `<div class="dedup-entry" data-dedup-id="${e.id}" style="cursor:pointer;">
+          <div>${e.date ? new Date(e.date).toLocaleDateString('fr-FR') : '—'}</div>
+          <div><span class="${chipClass(e.carburant)}">${escapeHtml(e.carburant)}</span></div>
+          <div>${escapeHtml(sanitize(e.lieu)) || '—'}</div>
+          <div style="font-weight:700;">${fmtL(e.litres)}</div>
+          <div style="font-weight:700;">${fmtEUR(e.montant)}</div>
+          <div>${fmtEUR(remboursementOf(e))}</div>
+          <div><span class="keep-tag ${isRemoved ? 'remove' : 'keep'}">${isRemoved ? '🗑️ Supprimer' : '✅ Conserver'}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+  
+  // Click to toggle keep/remove
+  content.querySelectorAll('.dedup-entry').forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.dedupId;
+      if(dedupRemoveIds.has(id)) dedupRemoveIds.delete(id);
+      else dedupRemoveIds.add(id);
+      renderDedupPanel();
+    };
+  });
+}
+
+async function deleteDedupSelected(){
+  if(dedupRemoveIds.size === 0) return;
+  if(!(await showModal(`Supprimer ${dedupRemoveIds.size} doublon(s) sélectionné(s) ?`,{ok:'Supprimer',cancel:'Annuler'}))) return;
+  entries = entries.filter(e => !dedupRemoveIds.has(e.id));
+  dedupRemoveIds.forEach(id => selectedIds.delete(id));
+  saveStorage(STORAGE_KEYS.entries, entries);
+  document.getElementById('dedup-panel').classList.remove('open');
+  render();
+  showModal(`✅ ${dedupRemoveIds.size} doublon(s) supprimé(s).`);
+}
+
+/* ===== FILTERS ===== */
+function populateFilters(){const vs=[...new Set(entries.map(e=>sanitize(e.vehicule)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));const cs=[...new Set(entries.map(e=>e.carburant))].sort();const ps=[...new Set(entries.map(e=>periodKey(e.date)).filter(Boolean))].sort().reverse();const fv=document.getElementById('f-vehicule').value,fp=document.getElementById('f-periode').value,fc=document.getElementById('f-carburant-filter').value;document.getElementById('f-vehicule').innerHTML='<option value="">Tous véhicules</option>'+vs.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');document.getElementById('f-carburant-filter').innerHTML='<option value="">Tous carburants</option>'+cs.map(c=>`<option value="${c}">${c}</option>`).join('');document.getElementById('f-periode').innerHTML='<option value="">Toutes périodes</option>'+ps.map(p=>`<option value="${p}">${p}</option>`).join('');document.getElementById('f-vehicule').value=fv;document.getElementById('f-periode').value=fp;document.getElementById('f-carburant-filter').value=fc}
+function filteredEntries(){const v=sanitize(document.getElementById('f-vehicule').value),p=sanitize(document.getElementById('f-periode').value),c=sanitize(document.getElementById('f-carburant-filter').value),q=sanitize(document.getElementById('f-search').value).toLowerCase();return entries.filter(e=>(hideAdBlue&&e.carburant==='AdBlue'?false:true)&&(!v||sanitize(e.vehicule)===v)&&(!p||periodKey(e.date)===p)&&(!c||e.carburant===c)&&(!q||(e.vehicule||'').toLowerCase().includes(q)||(e.lieu||'').toLowerCase().includes(q)||(e.note||'').toLowerCase().includes(q)||(e.ref||'').toLowerCase().includes(q)||(e.date||'').includes(q)))}
+function sortRows(rows){return[...rows].sort((a,b)=>{let av,bv;if(sortField==='date'){av=a.date;bv=b.date}else if(sortField==='periode'){av=periodKey(a.date);bv=periodKey(b.date)}else if(sortField==='litres'||sortField==='montant'||sortField==='km'){av=a[sortField]||0;bv=b[sortField]||0}else if(sortField==='remboursement'){av=remboursementOf(a);bv=remboursementOf(b)}else{av=String(a[sortField]||'').toLowerCase();bv=String(b[sortField]||'').toLowerCase()}if(typeof av==='string')return sortDir==='asc'?av.localeCompare(bv,'fr'):bv.localeCompare(av,'fr');return sortDir==='asc'?av-bv:bv-av})}
+
+/* ===== CRUD ===== */
+async function deleteEntry(id){if(!(await showModal('Supprimer ce ticket ?',{ok:'Supprimer',cancel:'Annuler'})))return;entries=entries.filter(e=>e.id!==id);selectedIds.delete(id);saveStorage(STORAGE_KEYS.entries,entries);render()}
+function editEntry(id){const e=entries.find(x=>x.id===id);if(!e)return;document.getElementById('import-panel').classList.add('open');switchImportTab('manual');editingId=e.id;document.getElementById('in-date').value=e.date;document.getElementById('in-vehicule').value=e.vehicule;document.getElementById('in-carburant').value=e.carburant;document.getElementById('in-lieu').value=e.lieu||'';document.getElementById('in-litres').value=e.litres;document.getElementById('in-montant').value=e.montant;document.getElementById('in-km').value=e.km||'';document.getElementById('in-ref').value=e.ref||'';document.getElementById('in-note').value=e.note||'';window.scrollTo({top:0,behavior:'smooth'})}
+
+/* ===== BULK ===== */
+function toggleSelect(id){if(selectedIds.has(id))selectedIds.delete(id);else selectedIds.add(id);render()}
+function toggleSelectAll(){const d=sortRows(filteredEntries());const allSelected=d.every(e=>selectedIds.has(e.id));d.forEach(e=>{if(allSelected)selectedIds.delete(e.id);else selectedIds.add(e.id)});render()}
+async function bulkDelete(){if(!selectedIds.size)return;if(!(await showModal(`Supprimer ${selectedIds.size} ticket(s) sélectionné(s) ?`,{ok:'Supprimer',cancel:'Annuler'})))return;entries=entries.filter(e=>!selectedIds.has(e.id));selectedIds.clear();saveStorage(STORAGE_KEYS.entries,entries);render()}
+
+/* ===== EXPORT ===== */
+function exportCSV(){const d=sortRows(filteredEntries());if(!d.length)return showModal('Aucune donnée à exporter.');const csv='\uFEFF'+[['Date','Véhicule','Carburant','Lieu','Litres','Montant HT','Remboursement TICPE','Kilométrage','Période','Référence','Note'].join(';'),...d.map(e=>{const r=remboursementOf(e);return[e.date,sanitize(e.vehicule),e.carburant,sanitize(e.lieu),String(e.litres).replace('.',','),String(e.montant).replace('.',','),String(r.toFixed(2)).replace('.',','),e.km||'',periodLabel(e.date),sanitize(e.ref),sanitize(e.note)].join(';')})].join('\n');const b=new Blob([csv],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='carnet_carburant_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(u)}
+function exportJSON(){const data={entries,rates,exportDate:new Date().toISOString()};const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='carnet_carburant_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(u)}
+function importJSON(){document.getElementById('json-input').click()}
+function handleJSONImport(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async(ev)=>{try{const data=JSON.parse(ev.target.result);if(!data.entries||!Array.isArray(data.entries))throw new Error('Format invalide');if(!(await showModal(`Importer ${data.entries.length} ticket(s) et ${Object.keys(data.rates||{}).length} taux ? Les données actuelles seront remplacées.`,{ok:'Importer',cancel:'Annuler'})))return;entries=data.entries;if(data.rates)rates=data.rates;saveStorage(STORAGE_KEYS.entries,entries);saveStorage(STORAGE_KEYS.rates,rates);render();showModal(`✅ ${entries.length} ticket(s) importé(s) avec succès.`)}catch(err){showModal('Erreur : fichier JSON invalide.')}};reader.readAsText(file);e.target.value=''}
+
+/* ===== FISCAL SUMMARY ===== */
+function renderFiscal(){const d=filteredEntries();const reimb=d.filter(e=>e.carburant!=='AdBlue');const adblue=d.filter(e=>e.carburant==='AdBlue');const byCarb={};d.forEach(e=>{if(!byCarb[e.carburant])byCarb[e.carburant]={litres:0,montant:0,remb:0,count:0};byCarb[e.carburant].litres+=e.litres||0;byCarb[e.carburant].montant+=e.montant||0;byCarb[e.carburant].remb+=remboursementOf(e);byCarb[e.carburant].count++});const totalLitres=d.reduce((s,e)=>s+(e.litres||0),0);const totalMontant=d.reduce((s,e)=>s+(e.montant||0),0);const totalRemb=d.reduce((s,e)=>s+remboursementOf(e),0);let html=`<table class="fiscal-table"><thead><tr><th>Carburant</th><th class="num">Tickets</th><th class="num">Litres</th><th class="num">Montant</th><th class="num">Taux €/L</th><th class="num">Remboursement</th></tr></thead><tbody>`;for(const[c,v]of Object.entries(byCarb)){html+=`<tr><td><span class="${chipClass(c)}">${c}</span></td><td class="num">${v.count}</td><td class="num">${fmtL(v.litres)}</td><td class="num">${fmtEUR(v.montant)}</td><td class="num">${(rates[c]||0).toFixed(4)} €</td><td class="num" style="font-weight:700;color:var(--accent-green)">${fmtEUR(v.remb)}</td></tr>`}html+=`<tr class="fiscal-total"><td><strong>Total</strong></td><td class="num"><strong>${d.length}</strong></td><td class="num"><strong>${fmtL(totalLitres)}</strong></td><td class="num"><strong>${fmtEUR(totalMontant)}</strong></td><td></td><td class="num" style="color:var(--accent-green)"><strong>${fmtEUR(totalRemb)}</strong></td></tr></tbody></table>`;if(totalLitres>0){const prixMoy=totalMontant/totalLitres;html+=`<div style="margin-top:16px;display:flex;gap:20px;flex-wrap:wrap;"><div style="background:var(--primary-light);padding:14px 18px;border-radius:10px;border:1px solid rgba(59,130,246,0.15);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Prix moyen / litre</div><div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--primary);margin-top:4px;">${fmtEUR(prixMoy)}</div></div><div style="background:var(--accent-green-light);padding:14px 18px;border-radius:10px;border:1px solid rgba(16,185,129,0.15);"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Taux de remboursement</div><div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--accent-green);margin-top:4px;">${(totalRemb/totalMontant*100||0).toFixed(1)} %</div></div></div>`}if(adblue.length>0){const aLitres=adblue.reduce((s,e)=>s+(e.litres||0),0);const aMontant=adblue.reduce((s,e)=>s+(e.montant||0),0);html+=`<div style="margin-top:16px;padding:12px 16px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:10px;"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">⚠️ AdBlue — Non éligible TICPE</div><div style="display:flex;gap:16px;font-size:13px;"><span><strong>${adblue.length}</strong> tickets</span><span><strong>${fmtL(aLitres)}</strong></span><span><strong>${fmtEUR(aMontant)}</strong> HT</span></div></div>`}document.getElementById('fiscal-content').innerHTML=html}
+
+/* ===== CHARTS ===== */
+function renderCharts(){const d=entries.filter(e=>e.date);const months={};d.forEach(e=>{const pk=periodKey(e.date);if(!pk)return;if(!months[pk])months[pk]={litres:0,montant:0};months[pk].litres+=e.litres||0;months[pk].montant+=e.montant||0});const sorted=Object.entries(months).sort((a,b)=>a[0].localeCompare(b[0])).slice(-12);const maxL=Math.max(...sorted.map(([,v])=>v.litres),1);const maxM=Math.max(...sorted.map(([,v])=>v.montant),1);const mkLabel=pk=>{if(periodMode==='mois'){const[y,m]=pk.split('-');const d=new Date(y,m-1);return d.toLocaleDateString('fr-FR',{month:'short'})}return pk};document.getElementById('chart-litres').innerHTML=sorted.map(([pk,v])=>{const pct=Math.max(2,v.litres/maxL*100);return`<div class="bar-row"><div class="bar-label">${mkLabel(pk)}</div><div class="bar-track"><div class="bar-fill blue" style="width:${pct}%">${pct>18?fmtL(v.litres):''}</div></div></div>`}).join('')||'<div class="bar-empty">Aucune donnée</div>';document.getElementById('chart-depenses').innerHTML=sorted.map(([pk,v])=>{const pct=Math.max(2,v.montant/maxM*100);return`<div class="bar-row"><div class="bar-label">${mkLabel(pk)}</div><div class="bar-track"><div class="bar-fill green" style="width:${pct}%">${pct>18?fmtEUR(v.montant):''}</div></div></div>`}).join('')||'<div class="bar-empty">Aucune donnée</div>'}
+
+/* ===== IMPORT TAB SWITCHING ===== */
+function switchImportTab(tab){
+  document.querySelectorAll('.import-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.import-content').forEach(c => c.classList.toggle('active', c.id === 'tab-'+tab));
+}
+
+/* ===== COMPTABLE REPORT =====*/
+function renderComptableReport(){
+  const all = filteredEntries();
+  const reimbursable = all.filter(e => e.carburant !== 'AdBlue');
+  const nonReimbursable = all.filter(e => e.carburant === 'AdBlue');
+  const dates = all.map(e => e.date).filter(Boolean).sort();
+  const dateMin = dates.length ? new Date(dates[0]).toLocaleDateString('fr-FR') : '\u2014';
+  const dateMax = dates.length ? new Date(dates[dates.length-1]).toLocaleDateString('fr-FR') : '\u2014';
+  const byVehicle = {};
+  reimbursable.forEach(e => {
+    const v = sanitize(e.vehicule) || 'Non renseign\u00e9';
+    if(!byVehicle[v]) byVehicle[v] = {litres:0, montant:0, remb:0, count:0, byCarb:{}};
+    byVehicle[v].litres += e.litres||0;
+    byVehicle[v].montant += e.montant||0;
+    byVehicle[v].remb += remboursementOf(e);
+    byVehicle[v].count++;
+    if(!byVehicle[v].byCarb[e.carburant]) byVehicle[v].byCarb[e.carburant] = {litres:0, montant:0, remb:0, count:0};
+    byVehicle[v].byCarb[e.carburant].litres += e.litres||0;
+    byVehicle[v].byCarb[e.carburant].montant += e.montant||0;
+    byVehicle[v].byCarb[e.carburant].remb += remboursementOf(e);
+    byVehicle[v].byCarb[e.carburant].count++;
+  });
+  const totalReimbLitres = reimbursable.reduce((s,e) => s+(e.litres||0), 0);
+  const totalReimbMontant = reimbursable.reduce((s,e) => s+(e.montant||0), 0);
+  const totalReimbRemb = reimbursable.reduce((s,e) => s+remboursementOf(e), 0);
+  const totalNonReimbLitres = nonReimbursable.reduce((s,e) => s+(e.litres||0), 0);
+  const totalNonReimbMontant = nonReimbursable.reduce((s,e) => s+(e.montant||0), 0);
+  let html = '';
+  html += '<div class="comptable-header">';
+  html += '<h3>\U0001f4cb R\u00e9sum\u00e9 pour la comptable \u2014 Remboursement TICPE</h3>';
+  html += '<div class="info-row"><span style="color:var(--text-muted)">P\u00e9riode couverte</span><strong>' + dateMin + ' \u2192 ' + dateMax + '</strong></div>';
+  html += '<div class="info-row"><span style="color:var(--text-muted)">Date du rapport</span><strong>' + new Date().toLocaleDateString('fr-FR') + '</strong></div>';
+  html += '<div class="info-row"><span style="color:var(--text-muted)">Total tickets</span><strong>' + all.length + ' (' + reimbursable.length + ' \u00e9ligibles, ' + nonReimbursable.length + ' non \u00e9ligibles)</strong></div>';
+  html += '</div>';
+  if(Object.keys(byVehicle).length > 0){
+    html += '<div class="comptable-section">';
+    html += '<h4 class="reimbursable">\u2705 D\u00e9penses \u00e9ligibles au remboursement TICPE</h4>';
+    for(const [veh, data] of Object.entries(byVehicle)){
+      html += '<h5 style="font-size:14px;margin:10px 0 6px;font-weight:600;">\U0001f697 ' + escapeHtml(veh) + '</h5>';
+      html += '<table class="comptable-table"><thead><tr><th>Carburant</th><th class="num">Tickets</th><th class="num">Litres</th><th class="num">Montant HT</th><th class="num">Taux \u20ac/L</th><th class="num">Remboursement</th></tr></thead><tbody>';
+      for(const [carb, cd] of Object.entries(data.byCarb)){
+        html += '<tr><td><span class="' + chipClass(carb) + '">' + carb + '</span></td>';
+        html += '<td class="num">' + cd.count + '</td>';
+        html += '<td class="num">' + fmtL(cd.litres) + '</td>';
+        html += '<td class="num">' + fmtEUR(cd.montant) + '</td>';
+        html += '<td class="num">' + (rates[carb]||0).toFixed(4) + ' \u20ac</td>';
+        html += '<td class="num" style="font-weight:700;color:var(--accent-green)">' + fmtEUR(cd.remb) + '</td></tr>';
+      }
+      html += '<tr class="total-row"><td>Sous-total ' + escapeHtml(veh) + '</td>';
+      html += '<td class="num">' + data.count + '</td>';
+      html += '<td class="num">' + fmtL(data.litres) + '</td>';
+      html += '<td class="num">' + fmtEUR(data.montant) + '</td>';
+      html += '<td></td>';
+      html += '<td class="num" style="color:var(--accent-green)">' + fmtEUR(data.remb) + '</td></tr>';
+      html += '</tbody></table>';
+    }
+    html += '</div>';
+  }
+  if(nonReimbursable.length > 0){
+    html += '<div class="comptable-section">';
+    html += '<h4 class="non-reimbursable">\u274c D\u00e9penses non \u00e9ligibles (AdBlue / additifs)</h4>';
+    html += '<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">L\u2019AdBlue n\u2019est pas un carburant \u2014 il n\u2019ouvre pas droit au remboursement TICPE. Ces montants sont affich\u00e9s pour information.</p>';
+    html += '<table class="comptable-table"><thead><tr><th>Date</th><th>V\u00e9hicule</th><th>Produit</th><th class="num">Litres</th><th class="num">Montant HT</th></tr></thead><tbody>';
+    nonReimbursable.forEach(e => {
+      html += '<tr><td>' + (e.date ? new Date(e.date).toLocaleDateString('fr-FR') : '\u2014') + '</td>';
+      html += '<td>' + escapeHtml(sanitize(e.vehicule)) + '</td>';
+      html += '<td><span class="tag tag-adblue">' + e.carburant + '</span></td>';
+      html += '<td class="num">' + fmtL(e.litres) + '</td>';
+      html += '<td class="num">' + fmtEUR(e.montant) + '</td></tr>';
+    });
+    html += '<tr class="total-row"><td colspan="3">Total AdBlue</td>';
+    html += '<td class="num">' + fmtL(totalNonReimbLitres) + '</td>';
+    html += '<td class="num">' + fmtEUR(totalNonReimbMontant) + '</td></tr>';
+    html += '</tbody></table>';
+    html += '</div>';
+  }
+  html += '<div class="comptable-totals">';
+  html += '<div class="comptable-total-box green"><div class="label">Remboursement TICPE</div><div class="value">' + fmtEUR(totalReimbRemb) + '</div><div class="sub">' + fmtL(totalReimbLitres) + ' \u00e9ligibles</div></div>';
+  if(totalReimbMontant > 0){
+    const taux = (totalReimbRemb / totalReimbMontant * 100).toFixed(1);
+    html += '<div class="comptable-total-box green"><div class="label">Taux de remboursement</div><div class="value">' + taux + ' %</div><div class="sub">du montant HT \u00e9ligible</div></div>';
+  }
+  html += '<div class="comptable-total-box"><div class="label">Montant HT \u00e9ligible</div><div class="value" style="color:var(--primary)">' + fmtEUR(totalReimbMontant) + '</div><div class="sub">' + reimbursable.length + ' tickets</div></div>';
+  if(nonReimbursable.length > 0){
+    html += '<div class="comptable-total-box"><div class="label">Montant HT non \u00e9ligible</div><div class="value" style="color:#ef4444">' + fmtEUR(totalNonReimbMontant) + '</div><div class="sub">' + nonReimbursable.length + ' tickets AdBlue</div></div>';
+  }
+  html += '</div>';
+  document.getElementById('comptable-content').innerHTML = html;
+}
+
+/* ===== RENDER ===== */
+function render(){populateFilters();const d=sortRows(filteredEntries());const tb=document.getElementById('table-body');tb.innerHTML=d.length?d.map(e=>{const r=remboursementOf(e);const sel=selectedIds.has(e.id);return`<tr class="${sel?'selected':''}"><td class="cb-cell"><input type="checkbox" ${sel?'checked':''} data-cb="${e.id}"></td><td>${e.date ? new Date(e.date).toLocaleDateString('fr-FR') : '—'}</td><td>${escapeHtml(sanitize(e.vehicule))}</td><td><span class="${chipClass(e.carburant)}">${escapeHtml(e.carburant)}</span></td><td>${escapeHtml(sanitize(e.lieu))||'—'}</td><td class="num">${fmtL(e.litres)}</td><td class="num">${fmtEUR(e.montant)}</td><td class="num">${fmtKm(e.km)}</td><td class="num">${fmtEUR(r)}</td><td>${periodLabel(e.date)}</td><td><button class="btn-ghost" data-edit="${e.id}" title="Modifier">✏️</button><button class="btn-ghost danger" data-delete="${e.id}" title="Supprimer">🗑️</button></td></tr>`}).join(''):`<tr><td colspan="11" class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Aucun ticket</div><div class="empty-sub">Ajoutez-en, importez des PDF ou scannez des photos !</div></td></tr>`;tb.querySelectorAll('[data-cb]').forEach(cb=>{cb.onchange=()=>toggleSelect(cb.dataset.cb)});tb.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editEntry(b.dataset.edit));tb.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteEntry(b.dataset.delete));const allCk=document.getElementById('cb-all');if(allCk)allCk.checked=d.length>0&&d.every(e=>selectedIds.has(e.id));const tl=d.reduce((s,e)=>s+(+e.litres||0),0),tm=d.reduce((s,e)=>s+(+e.montant||0),0),tr=d.reduce((s,e)=>s+remboursementOf(e),0);const prixMoy=tl>0?tm/tl:0;const dedupGroups=buildDuplicateGroups();const dupCount=dedupGroups.reduce((s,g)=>s+g.length-1,0);document.getElementById('sum-count').textContent=d.length;document.getElementById('sum-litres').textContent=fmtL(tl);document.getElementById('sum-montant').textContent=fmtEUR(tm);document.getElementById('sum-remb').textContent=fmtEUR(tr);document.getElementById('sum-prix-moy').textContent=tl>0?fmtEUR(prixMoy):'—';document.getElementById('sum-duplicates').textContent=dupCount;document.getElementById('spine-litres').textContent=fmtL(tl);document.getElementById('spine-remb').textContent=fmtEUR(tr);document.getElementById('spine-prix-moy').textContent=tl>0?fmtEUR(prixMoy):'—';const bulkBar=document.getElementById('bulk-bar');if(selectedIds.size>0){bulkBar.classList.add('visible');document.getElementById('bulk-count').textContent=selectedIds.size}else{bulkBar.classList.remove('visible')}renderCharts();if(document.getElementById('fiscal-panel').classList.contains('open'))renderFiscal();if(document.getElementById('comptable-panel').classList.contains('open'))renderComptableReport();if(document.getElementById('dedup-panel').classList.contains('open'))renderDedupPanel();document.querySelectorAll('thead th[data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortField)})}
+
+/* ===== INIT ===== */
+function init(){
+  entries=loadStorage(STORAGE_KEYS.entries,[]);
+  rates=loadStorage(STORAGE_KEYS.rates,{...DEFAULT_RATES});
+  initTheme();
+  const savedImmat = loadStorage('carnet_default_immat','');
+  const immatInput = document.getElementById('img-default-immat');
+  if(immatInput && savedImmat) immatInput.value = savedImmat;
+  document.getElementById('toggle-adblue').checked=!hideAdBlue;
+  renderRateInputs();
+  render();
+
+  // Theme
+  document.getElementById('theme-toggle').onclick=toggleTheme;
+  document.getElementById('toggle-adblue').onchange=function(){hideAdBlue=!this.checked;saveStorage(STORAGE_KEYS.adblueHidden,hideAdBlue);render()};
+
+  // Import panel toggle
+  document.getElementById('btn-toggle-import').onclick=()=>{document.getElementById('import-panel').classList.toggle('open')};
+  
+  // Import tabs
+  document.querySelectorAll('.import-tab').forEach(t => {
+    t.onclick = () => switchImportTab(t.dataset.tab);
+  });
+
+  // Close import
+  document.getElementById('btn-close-import').onclick = closeImportPanel;
+  document.getElementById('btn-close-import2').onclick = closeImportPanel;
+
+  // PDF import
+  document.getElementById('btn-import-all').onclick=importAllTickets;
+
+  // Image import
+  document.getElementById('btn-import-img-all').onclick=importAllImgTickets;
+
+  // Actions
+  document.getElementById('btn-dedup').onclick=()=>{document.getElementById('dedup-panel').classList.toggle('open');renderDedupPanel()};
+  document.getElementById('btn-export').onclick=exportCSV;
+  document.getElementById('btn-export-json').onclick=exportJSON;
+  document.getElementById('btn-import-json').onclick=importJSON;
+  document.getElementById('json-input').onchange=handleJSONImport;
+
+  // Bulk
+  document.getElementById('btn-bulk-delete').onclick=bulkDelete;
+  document.getElementById('btn-bulk-clear').onclick=()=>{selectedIds.clear();render()};
+  document.getElementById('cb-all').onchange=toggleSelectAll;
+
+  // Rates
+  document.getElementById('btn-code-toggle').onclick=()=>document.getElementById('code-panel').classList.toggle('open');
+  document.getElementById('btn-close-code').onclick=()=>document.getElementById('code-panel').classList.remove('open');
+  document.getElementById('btn-save-code').onclick=saveNewCode;
+  document.getElementById('btn-lock-now').onclick=()=>{document.getElementById('code-panel').classList.remove('open');lockApp()};
+  document.getElementById('btn-rates-toggle').onclick=()=>document.getElementById('rate-panel').classList.toggle('open');
+  document.getElementById('btn-save-rates').onclick=saveRates;
+  document.getElementById('btn-close-rates').onclick=()=>document.getElementById('rate-panel').classList.remove('open');
+
+  // Fiscal
+  document.getElementById('btn-fiscal-toggle').onclick=()=>{const p=document.getElementById('fiscal-panel');p.classList.toggle('open');if(p.classList.contains('open'))renderFiscal()};
+  document.getElementById('btn-comptable-toggle').onclick=()=>{const p=document.getElementById('comptable-panel');p.classList.toggle('open');if(p.classList.contains('open'))renderComptableReport()};
+  document.getElementById('btn-close-fiscal').onclick=()=>document.getElementById('fiscal-panel').classList.remove('open');
+  document.getElementById('btn-close-comptable').onclick=()=>document.getElementById('comptable-panel').classList.remove('open');
+  document.getElementById('btn-print-fiscal').onclick=()=>window.print();
+  document.getElementById('btn-print-comptable').onclick=()=>window.print();
+
+  // Dedup panel
+  document.getElementById('btn-close-dedup').onclick=()=>document.getElementById('dedup-panel').classList.remove('open');
+  document.getElementById('btn-dedup-delete').onclick=deleteDedupSelected;
+
+  // PDF dropzone
+  const dz=document.getElementById('pdf-dropzone'),pi=document.getElementById('pdf-input');
+  dz.onclick=()=>pi.click();
+  pi.onchange=e=>{if(e.target.files.length)handlePdfFiles(Array.from(e.target.files))};
+  dz.ondragover=e=>{e.preventDefault();dz.classList.add('dragover')};
+  dz.ondragleave=()=>dz.classList.remove('dragover');
+  dz.ondrop=e=>{e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files.length)handlePdfFiles(Array.from(e.dataTransfer.files))};
+
+  // Image dropzone
+  const idz=document.getElementById('img-dropzone'),ii=document.getElementById('img-input');
+  idz.onclick=()=>ii.click();
+  ii.onchange=e=>{if(e.target.files.length)handleImageFiles(Array.from(e.target.files))};
+  const diagBtn=document.getElementById('btn-ocr-diag'); if(diagBtn) diagBtn.onclick=()=>runOcrDiagnostic();
+  idz.ondragover=e=>{e.preventDefault();idz.classList.add('dragover')};
+  idz.ondragleave=()=>idz.classList.remove('dragover');
+  idz.ondrop=e=>{e.preventDefault();idz.classList.remove('dragover');if(e.dataTransfer.files.length)handleImageFiles(Array.from(e.dataTransfer.files))};
+
+  // Form submit (inline in manual tab)
+  document.getElementById('ticket-form-inline').onsubmit=async e=>{
+    e.preventDefault();
+    const entry={id:editingId||genId(),date:document.getElementById('in-date').value,vehicule:sanitize(document.getElementById('in-vehicule').value),carburant:document.getElementById('in-carburant').value,lieu:sanitize(document.getElementById('in-lieu').value),litres:parseFloat(document.getElementById('in-litres').value)||0,montant:parseFloat(document.getElementById('in-montant').value)||0,km:parseInt(document.getElementById('in-km').value)||'',ref:sanitize(document.getElementById('in-ref').value),note:sanitize(document.getElementById('in-note').value)};
+    if(!editingId&&findFuzzyDuplicate(entry)>=0){
+      if(!(await showModal('⚠️ Ce ticket semble déjà exister. Voulez-vous l\'ajouter quand même ?',{ok:'Ajouter',cancel:'Annuler'})))return;
+    }
+    if(editingId){const i=entries.findIndex(x=>x.id===editingId);entries[i]=entry;editingId=null}
+    else entries.push(entry);
+    saveStorage(STORAGE_KEYS.entries,entries);
+    document.getElementById('ticket-form-inline').reset();
+    render();
+  };
+
+  // Filters
+  document.querySelectorAll('.seg-btn').forEach(b=>{b.onclick=()=>{periodMode=b.dataset.mode;document.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');render()}});
+  document.getElementById('f-vehicule').onchange=render;
+  document.getElementById('f-periode').onchange=render;
+  document.getElementById('f-carburant-filter').onchange=render;
+  document.getElementById('f-search').oninput=render;
+
+  // Sort
+  document.querySelectorAll('thead th[data-sort]').forEach(h=>{h.style.cursor='pointer';h.onclick=()=>{sortDir=sortField===h.dataset.sort?(sortDir==='asc'?'desc':'asc'):'desc';sortField=h.dataset.sort;render()}});
+
+  // Sidebar nav
+  document.querySelectorAll('.nav-item').forEach(n=>{n.onclick=()=>{document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));n.classList.add('active');const section=n.dataset.section;if(section==='fiscal')document.getElementById('fiscal-panel').classList.add('open'),renderFiscal();if(section==='dedup')document.getElementById('dedup-panel').classList.add('open'),renderDedupPanel();if(section==='dashboard')window.scrollTo({top:0,behavior:'smooth'});if(section==='tickets')document.querySelector('.table-card').scrollIntoView({behavior:'smooth'})}});
+}
+document.addEventListener('DOMContentLoaded',setupGate);
+</script>
+</body>
+</html>
